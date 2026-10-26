@@ -23,6 +23,8 @@ import { Avatar } from "../ui/Primitives";
 import { Dropdown } from "../ui/Controls";
 import { IconButton } from "../ui/Button";
 import { SyncIndicator } from "./SyncIndicator";
+import { Mascot } from "../ui/Mascot";
+import { MASCOT_BY_STATE } from "../ui/mascots";
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -108,7 +110,6 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   return (
     // `flex-1 min-h-0` (not `h-full`): inside the fixed-height sidebar this is
     // the one region that scrolls, and only when the links exceed the screen.
-    // In the drawer it falls back to natural height and the wrapper scrolls.
     <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 pt-3">
       <NetWorthCard />
       <div className="pt-3">
@@ -136,7 +137,6 @@ function UserMenu() {
   const { email, logout } = useAuth();
   const { conflicts } = useSync();
   const navigate = useNavigate();
-  // Last-known display name when the live session/email is unavailable.
   const cached = useLiveQuery(() => db.profile.get(PROFILE_KEY), []);
   const cachedName = cached ? `${cached.first_name} ${cached.last_name}`.trim() : "";
   return (
@@ -314,6 +314,16 @@ export function AppShell({ children, onQuickAdd }: AppShellProps) {
           </div>
 
           <div className="ml-auto flex items-center gap-1">
+            {/* Desktop Add Transaction action: prominent primary button. */}
+            <button
+              type="button"
+              onClick={onQuickAdd}
+              aria-label="Add transaction"
+              className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast shadow-card hover:bg-primary-hover transition-colors"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              Add transaction
+            </button>
             <SyncIndicator />
             <NavLink to="/notifications" aria-label="Notifications" className="icon-btn">
               <Bell className="h-5 w-5" />
