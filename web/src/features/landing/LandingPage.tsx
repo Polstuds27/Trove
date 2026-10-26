@@ -21,6 +21,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Mascot } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import { InstallSection } from "./InstallSection";
 
 interface Feature {
@@ -197,7 +198,7 @@ export function LandingPage() {
             </div>
 
             <div aria-hidden="true" className="relative mx-auto w-full max-w-[22rem]">
-              <Mascot pose="idle" size={256} className="mx-auto" />
+              <Mascot pose={MASCOT_BY_STATE.landing} size={256} className="mx-auto" />
             </div>
           </div>
         </section>

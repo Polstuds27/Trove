@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Wallet } from "lucide-react";
+import { Mascot } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 
 /**
  * Auth layout.
  *
  * Sign-in is a focused single task, so the marketing split-screen is only shown
- * from `lg` up; below that the form owns the viewport.
+ * from `lg` up; below that the form owns the viewport. The sage panel carries
+ * the brand mark and the mascot, calm and premium (§34).
  */
 export function AuthLayout({
   title,
@@ -21,25 +24,26 @@ export function AuthLayout({
 }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1fr_minmax(0,26rem)] xl:grid-cols-[1fr_minmax(0,30rem)]">
-      <aside className="relative hidden overflow-hidden bg-primary p-10 text-primary-contrast lg:flex lg:flex-col">
+      <aside className="relative hidden overflow-hidden bg-sage p-10 text-primary-contrast lg:flex lg:flex-col">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-25"
+          className="pointer-events-none absolute inset-0 opacity-30"
           style={{
             backgroundImage:
               "radial-gradient(circle at 18% 12%, rgba(255,255,255,0.35), transparent 42%), radial-gradient(circle at 82% 88%, rgba(255,255,255,0.25), transparent 46%)",
           }}
         />
         <Link to="/" className="relative flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
             <Wallet aria-hidden="true" className="h-5 w-5" />
           </span>
           <span className="text-sm font-semibold">Trove</span>
         </Link>
 
         <div className="relative mt-auto max-w-md">
-          <h2 className="text-display-sm text-white">Your money, clearly.</h2>
-          <p className="mt-3 text-sm leading-relaxed text-white/80">
+          <Mascot pose={MASCOT_BY_STATE.landing} size={140} className="mx-auto mb-6" label="Trove mascot" />
+          <h2 className="text-display-sm text-white text-center">Your money, clearly.</h2>
+          <p className="mt-3 text-sm leading-relaxed text-white/80 text-center">
             Accounts, transactions, budgets, goals and reports in one place. Works offline, syncs
             to every device, and keeps your ledger — not your bank login — as the source of truth.
           </p>
