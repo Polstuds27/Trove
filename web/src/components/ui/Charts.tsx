@@ -224,6 +224,7 @@ export function DonutChart({
   centerValue,
   ariaLabel,
   colors,
+  showLegend = true,
 }: {
   slices: Slice[];
   size?: number;
@@ -232,6 +233,8 @@ export function DonutChart({
   centerValue?: string;
   ariaLabel: string;
   colors?: readonly string[];
+  /** Set false when the page renders its own richer legend. */
+  showLegend?: boolean;
 }) {
   const palette = colors ?? [
     TOKEN.primary,
@@ -293,16 +296,18 @@ export function DonutChart({
           </div>
         )}
       </div>
-      <ul className="min-w-0 flex-1 space-y-1.5">
-        {segments.slice(0, 7).map((segment) => (
-          <li key={segment.label} className="flex items-center gap-2 text-xs">
-            <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: segment.color }} />
-            <span className="min-w-0 flex-1 truncate text-ink-soft">{segment.label}</span>
-            <span className="tabular shrink-0 text-muted">{segment.percent.toFixed(0)}%</span>
-          </li>
-        ))}
-        {segments.length > 7 && <li className="text-xs text-muted">+{segments.length - 7} more</li>}
-      </ul>
+      {showLegend && (
+        <ul className="min-w-0 flex-1 space-y-1.5">
+          {segments.slice(0, 7).map((segment) => (
+            <li key={segment.label} className="flex items-center gap-2 text-xs">
+              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: segment.color }} />
+              <span className="min-w-0 flex-1 truncate text-ink-soft">{segment.label}</span>
+              <span className="tabular shrink-0 text-muted">{segment.percent.toFixed(0)}%</span>
+            </li>
+          ))}
+          {segments.length > 7 && <li className="text-xs text-muted">+{segments.length - 7} more</li>}
+        </ul>
+      )}
     </figure>
   );
 }

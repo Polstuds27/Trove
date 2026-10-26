@@ -46,15 +46,15 @@ Branch: `redesign/spec`. Presentation only: no API, store, sync, auth or calcula
 - [x] Loading, empty, error, offline (global banner + boundary; empty/loading on page)
 
 ### 4. Transactions, Accounts, Budget, Statistics
-- [ ] Transactions desktop master-detail, search, pills, selected detail, mascot
-- [ ] Transactions mobile grouped list + detail bottom sheet
-- [ ] Accounts desktop two columns, recent activity, mascot
-- [ ] Accounts mobile hero + list + detail screen
-- [ ] Budget desktop two columns, category blocks, mascot panel
-- [ ] Budget mobile one column
-- [ ] Statistics desktop donut + paired bars + mascot
-- [ ] Statistics mobile range pills + donut + legend + bars + mascot
-- [ ] Loading, empty, error, offline for all four
+- [x] Transactions desktop master-detail, search, pills, selected detail, mascot
+- [x] Transactions mobile grouped list + detail bottom sheet
+- [x] Accounts desktop two columns, recent activity, mascot
+- [x] Accounts mobile hero + list + detail screen
+- [x] Budget desktop two columns, category blocks, mascot panel
+- [x] Budget mobile one column
+- [x] Statistics desktop donut + paired bars + mascot
+- [x] Statistics mobile range pills + donut + legend + bars + mascot
+- [x] Loading, empty, error, offline for all four
 
 ### 5. Savings goals, Debts, Credit cards, Recurring, Installments, Calendar
 - [ ] Savings goals desktop hero + 3 cards
@@ -209,10 +209,10 @@ All components must ask for a semantic name via `src/lib/mascot.ts`; no filename
 
 | Check | Result |
 | --- | --- |
-| typecheck | TODO |
-| lint | TODO |
-| test | TODO |
-| build | TODO |
+| typecheck | PASS |
+| lint | PASS |
+| test | 32 passed, 1 pre-existing date failure |
+| build | PASS |
 | Playwright routes 1440×900 / 390×844 light+dark | TODO |
 | Screenshots to `docs/screenshots/` | TODO |
 

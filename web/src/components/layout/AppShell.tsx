@@ -43,7 +43,7 @@ function Brand() {
     <NavLink to="/overview" className="flex items-center gap-3 px-1" aria-label="Trove home">
       <span
         aria-hidden="true"
-        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-white text-primary shadow-sm dark:bg-cream dark:text-ink"
+        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-white text-primary shadow-sm dark:bg-cream dark:text-primary-contrast"
       >
         <Sprout className="h-[19px] w-[19px]" />
       </span>
