@@ -25,6 +25,7 @@ import {
   PageHeader,
   PeriodStepper,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import { formatMoney, toDateKey, isToday, toDate, addDays } from "../../design/format";
 import { calendarGrid } from "../../features/analytics/period";
 import { calendarEvents, type CalendarEvent } from "../analytics/engine";
@@ -224,14 +225,14 @@ export function CalendarPage() {
         {!selectedKey ? (
           <EmptyState
             compact
-            icon={<CalendarIcon className="h-6 w-6" />}
+            mascot={MASCOT_BY_STATE.empty}
             title="No day selected"
             description="Recorded transactions appear as dots; bills, installments, debts and goal dates appear as icons on the days they fall."
           />
         ) : selected.length === 0 ? (
           <EmptyState
             compact
-            icon={<CalendarIcon className="h-6 w-6" />}
+            mascot={MASCOT_BY_STATE.idle}
             title="Nothing on this day"
             description="Add a transaction, or switch on a recurring rule and its occurrences will show up here."
             action={

@@ -7,7 +7,7 @@
  */
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bookmark, Star } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import {
   Button,
   Card,
@@ -16,6 +16,7 @@ import {
   PageHeader,
   SegmentedControl,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import type { LocalTransaction } from "../../db/types";
 import { byTxNewest, formatMoney, formatRelativeDay } from "../../design/format";
 import { categoryIcon } from "../../design/icons";
@@ -70,7 +71,7 @@ export function BookmarksPage() {
       {ready && rows.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<Bookmark className="h-7 w-7" />}
+            mascot={MASCOT_BY_STATE.emptyBookmarks}
             title="No bookmarks yet"
             description="Flag a transaction whenever you want to find it again — a charge to dispute, a receipt to file, a payment to question. Open any transaction and tap the bookmark, or use the row action in the list."
             action={

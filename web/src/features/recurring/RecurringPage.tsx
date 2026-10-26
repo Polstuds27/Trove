@@ -14,7 +14,6 @@ import {
   Pause,
   Play,
   Plus,
-  Repeat,
 } from "lucide-react";
 import {
   Alert,
@@ -26,6 +25,7 @@ import {
   PageHeader,
   SegmentedControl,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import type { LocalRecurring } from "../../db/types";
 import { formatMoney, formatRelativeDay } from "../../design/format";
 import { categoryIcon } from "../../design/icons";
@@ -130,7 +130,7 @@ export function RecurringPage() {
       {ready && dataset.recurring.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<Repeat className="h-7 w-7" />}
+            mascot={MASCOT_BY_STATE.empty}
             title="No recurring rules yet"
             description="Rent, subscriptions, salary — if it repeats, put it here and you'll always know what's committed before you spend. Entries land in your ledger as they come due."
             action={
@@ -144,7 +144,7 @@ export function RecurringPage() {
       ) : rows.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<Repeat className="h-7 w-7" />}
+            mascot={MASCOT_BY_STATE.emptySearch}
             title="Nothing matches this filter"
             description="Switch to All to see every recurring rule you've set up."
             action={

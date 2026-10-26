@@ -18,6 +18,7 @@ import {
   PageHeader,
   SegmentedControl,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import type { LocalCategory } from "../../db/types";
 import { categoryIcon } from "../../design/icons";
 import { useLocalData } from "../analytics/useLocalData";
@@ -104,7 +105,7 @@ export function CategoriesPage() {
       {ready && dataset.categories.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<Tags className="h-7 w-7" />}
+            mascot={MASCOT_BY_STATE.empty}
             title="No categories yet"
             description="Categories are what turn a list of transactions into a report: they tell you where the money went and give budgets something to hold onto. Start with a handful of real ones and add more as you go."
             action={

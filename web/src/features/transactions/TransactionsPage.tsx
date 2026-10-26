@@ -23,12 +23,14 @@ import {
   Card,
   EmptyState,
   IconButton,
+  Mascot,
   PageHeader,
   SearchInput,
   SegmentedControl,
   Select,
   Stat,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import { byTxNewest, formatMoney } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
 import { usePreferences } from "../settings/preferences";
@@ -262,7 +264,7 @@ export function TransactionsPage() {
 
         {filtered.length === 0 ? (
           <EmptyState
-            mascot={activeFilterCount > 0 ? undefined : "note"}
+            mascot={activeFilterCount > 0 ? MASCOT_BY_STATE.emptySearch : MASCOT_BY_STATE.emptyTransactions}
             title={activeFilterCount > 0 ? "No transactions match" : "Nothing recorded in this period"}
             description={
               activeFilterCount > 0

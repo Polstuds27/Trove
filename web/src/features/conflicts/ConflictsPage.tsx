@@ -8,7 +8,7 @@
  */
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDownToLine, ArrowUpFromLine, CircleCheck, CloudSync, ShieldAlert } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, CloudSync, ShieldAlert } from "lucide-react";
 import {
   Alert,
   Badge,
@@ -19,6 +19,7 @@ import {
   PageHeader,
   useToast,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import type { ConflictEntry } from "../../db/types";
 import { formatDate } from "../../design/format";
 import { useSync } from "../../sync/SyncContext";
@@ -82,7 +83,7 @@ export function ConflictsPage() {
       {conflicts.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<CircleCheck className="h-7 w-7" />}
+            mascot={MASCOT_BY_STATE.syncConflict}
             title="No sync conflicts"
             description="Every change you make on this device has been accepted by the server. Conflicts show up here if an edit races ahead while you're offline."
             action={

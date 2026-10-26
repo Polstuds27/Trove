@@ -7,7 +7,7 @@
  */
 import { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Bookmark, FolderTree, Search, Tag, Wallet, X } from "lucide-react";
+import { Bookmark, FolderTree, Tag, Wallet, X } from "lucide-react";
 import {
   Alert,
   Badge,
@@ -18,6 +18,7 @@ import {
   SearchInput,
   SegmentedControl,
 } from "../../components/ui";
+import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import { formatMoney, formatRelativeDay } from "../../design/format";
 import { categoryIcon } from "../../design/icons";
 import { useLocalData } from "../analytics/useLocalData";
@@ -119,7 +120,7 @@ export function SearchPage() {
       {!ready ? (
         <Card>
           <EmptyState
-            icon={<Search className="h-7 w-7" />}
+            mascot={MASCOT_BY_STATE.loading}
             title="Loading your ledger…"
             description="Search runs against the copy stored in this browser."
           />
@@ -127,7 +128,7 @@ export function SearchPage() {
       ) : total === 0 ? (
         <Card>
           <EmptyState
-            icon={<Search className="h-7 w-7" />}
+            mascot={hasQuery ? MASCOT_BY_STATE.emptySearch : MASCOT_BY_STATE.idle}
             title={hasQuery ? `No matches for “${query}”` : "Start typing to search"}
             description={
               hasQuery
