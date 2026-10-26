@@ -1,5 +1,5 @@
 /**
- * "Install FinTrack" — the PWA download section of the landing page.
+ * "Install Trove" — the PWA download section of the landing page.
  *
  * Behaviour is platform-aware: Chromium browsers get the native install prompt
  * (`beforeinstallprompt`, wired in `app/pwa`), iOS Safari has no such API so it
@@ -25,7 +25,7 @@ const PLATFORM: Record<"ios" | "android" | "desktop", PlatformCopy> = {
     steps: [
       "Tap the Share button in the Safari toolbar.",
       'Scroll down and choose "Add to Home Screen".',
-      'Tap "Add" — FinTrack appears on your home screen.',
+      'Tap "Add" — Trove appears on your home screen.',
     ],
   },
   android: {
@@ -34,7 +34,7 @@ const PLATFORM: Record<"ios" | "android" | "desktop", PlatformCopy> = {
     steps: [
       "Tap the ⋮ menu in the top-right corner.",
       'Choose "Install app" or "Add to Home screen".',
-      "Confirm — FinTrack installs like any other app.",
+      "Confirm — Trove installs like any other app.",
     ],
   },
   desktop: {
@@ -42,7 +42,7 @@ const PLATFORM: Record<"ios" | "android" | "desktop", PlatformCopy> = {
     icon: Monitor,
     steps: [
       "Click the install icon at the right of the address bar.",
-      'Or open the ⋮ menu and choose "Install FinTrack".',
+      'Or open the ⋮ menu and choose "Install Trove".',
       "Launch it from your dock, desktop or start menu.",
     ],
   },
@@ -68,10 +68,10 @@ export function InstallSection() {
         <div>
           <p className="label">Get the app</p>
           <h2 className="mt-2 text-display text-ink">
-            Install FinTrack on your phone
+            Install Trove on your phone
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
-            FinTrack is a Progressive Web App: it installs straight from the
+            Trove is a Progressive Web App: it installs straight from the
             browser — no app store, no download page. You get a home-screen
             icon, full-screen windows, offline access and updates that roll out
             the moment we ship them.
@@ -103,7 +103,7 @@ export function InstallSection() {
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-income-soft">
                 <Check aria-hidden="true" className="h-6 w-6 text-income" />
               </span>
-              <p className="text-sm font-semibold text-ink">FinTrack is installed</p>
+              <p className="text-sm font-semibold text-ink">Trove is installed</p>
               <p className="text-xs leading-relaxed text-muted">
                 You already have it on this device — open it from your home
                 screen or dock.
@@ -119,7 +119,7 @@ export function InstallSection() {
                 icon={<Download aria-hidden="true" className="h-4 w-4" />}
                 onClick={() => void install()}
               >
-                Install FinTrack
+                Install Trove
               </Button>
               {dismissed && (
                 <p className="text-center text-xs text-muted">
@@ -131,7 +131,7 @@ export function InstallSection() {
                   <li key={step} className="flex gap-2.5 text-xs leading-relaxed text-muted">
                     <span
                       aria-hidden="true"
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-bg text-[11px] font-semibold text-primary"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-soft-bg text-[11px] font-semibold text-primary"
                     >
                       {index + 1}
                     </span>
@@ -155,7 +155,7 @@ export function InstallSection() {
                   <li key={step} className="flex gap-2.5 text-xs leading-relaxed text-muted">
                     <span
                       aria-hidden="true"
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-bg text-[11px] font-semibold text-primary"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-soft-bg text-[11px] font-semibold text-primary"
                     >
                       {index + 1}
                     </span>
@@ -166,7 +166,7 @@ export function InstallSection() {
               <p className="flex items-center gap-1.5 border-t border-line pt-3 text-[11px] text-faint">
                 <Share aria-hidden="true" className="h-3.5 w-3.5" />
                 {platform === "desktop"
-                  ? 'Look for "Install FinTrack" or "Install this page as an app".'
+                  ? 'Look for "Install Trove" or "Install this page as an app".'
                   : "The Share button is the square with an arrow."}
               </p>
             </div>

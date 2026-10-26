@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowDownRight,
   ArrowLeftRight,
-  ArrowUpDown,
   Bookmark,
   ArrowUpRight,
   ListFilter,
@@ -263,7 +262,7 @@ export function TransactionsPage() {
 
         {filtered.length === 0 ? (
           <EmptyState
-            icon={activeFilterCount > 0 ? <ArrowUpDown className="h-7 w-7" /> : <ArrowLeftRight className="h-7 w-7" />}
+            mascot={activeFilterCount > 0 ? undefined : "note"}
             title={activeFilterCount > 0 ? "No transactions match" : "Nothing recorded in this period"}
             description={
               activeFilterCount > 0

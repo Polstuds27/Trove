@@ -34,7 +34,7 @@ export function AuthLayout({
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
             <Wallet aria-hidden="true" className="h-5 w-5" />
           </span>
-          <span className="text-sm font-semibold">FinTrack</span>
+          <span className="text-sm font-semibold">Trove</span>
         </Link>
 
         <div className="relative mt-auto max-w-md">
@@ -64,7 +64,7 @@ export function AuthLayout({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-contrast">
               <Wallet aria-hidden="true" className="h-5 w-5" />
             </span>
-            <span className="text-sm font-semibold text-ink">FinTrack</span>
+            <span className="text-sm font-semibold text-ink">Trove</span>
           </Link>
 
           <h1 className="text-display-sm text-ink">{title}</h1>

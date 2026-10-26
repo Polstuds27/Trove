@@ -7,7 +7,7 @@
  */
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarClock, Layers, Plus, Receipt } from "lucide-react";
+import { CalendarClock, Plus, Receipt } from "lucide-react";
 import {
   Alert,
   Button,
@@ -95,23 +95,21 @@ export function InstallmentsPage() {
       )}
 
       {ready && dataset.installments.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Layers className="h-7 w-7" />}
-            title="No installment plans yet"
-            description="Bought something on a payment plan? Record it once and FinTrack tracks every part — how many are left, what each costs, and when the next one is due — all computed from your own ledger."
-            action={
-              <Button
-                variant="primary"
-                icon={<Plus className="h-4 w-4" />}
-                onClick={() => navigate("/installments/new")}
-              >
-                Create a plan
-              </Button>
-            }
-            secondaryAction={<LinkButton to="/calendar">Open the calendar</LinkButton>}
-          />
-        </Card>
+        <EmptyState
+          mascot="coin"
+          title="No installment plans yet"
+          description="Bought something on a payment plan? Record it once and Trove tracks every part — how many are left, what each costs, and when the next one is due — all computed from your own ledger."
+          action={
+            <Button
+              variant="primary"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => navigate("/installments/new")}
+            >
+              Create a plan
+            </Button>
+          }
+          secondaryAction={<LinkButton to="/calendar">Open the calendar</LinkButton>}
+        />
       ) : (
         <div className="space-y-3">
           {plans.map((item) => (

@@ -126,19 +126,17 @@ export function DebtsPage() {
       )}
 
       {ready && dataset.debts.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Landmark className="h-7 w-7" />}
-            title="No debts recorded"
-            description="Whether it's a credit-card balance, a friend you'll repay, or money someone owes you, keeping it here means the total is always visible instead of lurking in the back of your mind."
-            action={
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/debts/new")}>
-                Record one
-              </Button>
-            }
-            secondaryAction={<LinkButton to="/credit-cards">Open credit cards</LinkButton>}
-          />
-        </Card>
+        <EmptyState
+          mascot="coin"
+          title="No debts recorded"
+          description="Whether it's a credit-card balance, a friend you'll repay, or money someone owes you, keeping it here means the total is always visible instead of lurking in the back of your mind."
+          action={
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/debts/new")}>
+              Record one
+            </Button>
+          }
+          secondaryAction={<LinkButton to="/credit-cards">Open credit cards</LinkButton>}
+        />
       ) : active.length === 0 ? (
         <Card>
           <EmptyState

@@ -128,7 +128,7 @@ export function CreditCardsPage() {
           <EmptyState
             icon={<CreditCard className="h-7 w-7" />}
             title="No credit cards yet"
-            description="Add one and FinTrack tracks its balance, statement day, payment due date and utilization — then shows everything you owe in one place on this screen."
+            description="Add one and Trove tracks its balance, statement day, payment due date and utilization — then shows everything you owe in one place on this screen."
             action={
               <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/credit-cards/new")}>
                 Add a card

@@ -47,7 +47,7 @@ export function NetworkBanner() {
       >
         <span className="flex min-w-0 items-center gap-2 text-sm text-ink">
           <CloudUpload aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-          <span className="min-w-0">A new version of FinTrack is ready.</span>
+          <span className="min-w-0">A new version of Trove is ready.</span>
         </span>
         <button
           type="button"
@@ -104,7 +104,7 @@ export function NetworkBanner() {
           <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0 text-expense" />
           <span className="min-w-0">
             {serverDown
-              ? "FinTrack can't reach the server — your changes are safe on this device and will send automatically."
+              ? "Trove can't reach the server — your changes are safe on this device and will send automatically."
               : "Sync failed — your changes are safe on this device."}
             {pendingCount > 0 && ` ${pendingCount} waiting.`}
           </span>

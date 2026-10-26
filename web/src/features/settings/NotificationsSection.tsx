@@ -48,7 +48,7 @@ export function NotificationsSection() {
     <div className="space-y-4">
       <Panel
         title="Alert checks"
-        description="FinTrack watches budgets, debts and goals, then posts an alert when something needs attention."
+        description="Trove watches budgets, debts and goals, then posts an alert when something needs attention."
         footer={
           <>
             <Link

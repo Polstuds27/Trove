@@ -40,8 +40,9 @@ export function ChartFrame({
   subtitle?: ReactNode;
   action?: ReactNode;
   legend?: ReactNode;
-  children: ReactNode;
-  empty?: boolean;
+  children?: ReactNode;
+  /** Truthy renders the empty slot; a string overrides the default copy. */
+  empty?: boolean | string;
   className?: string;
   bodyClassName?: string;
 }) {

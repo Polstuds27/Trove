@@ -1,5 +1,5 @@
 /**
- * FinTrack service worker.
+ * Trove service worker.
  *
  * The ledger itself lives in IndexedDB, so the job here is narrower: keep the
  * *app shell* (HTML, JS, CSS, icons) available with no connection, and get out

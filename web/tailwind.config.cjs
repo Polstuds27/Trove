@@ -52,6 +52,11 @@ module.exports = {
           soft: "rgb(var(--color-info-soft) / <alpha-value>)",
         },
         overlay: "rgb(var(--color-overlay) / <alpha-value>)",
+        // Brand palette (direction contract): available for deliberate use;
+        // most surfaces should use the semantic names above.
+        forest: "rgb(var(--color-forest) / <alpha-value>)",
+        sage: "rgb(var(--color-sage) / <alpha-value>)",
+        sand: "rgb(var(--color-sand) / <alpha-value>)",
       },
       boxShadow: {
         card: "var(--shadow-card)",
@@ -59,10 +64,12 @@ module.exports = {
         overlay: "var(--shadow-overlay)",
       },
       fontFamily: {
+        // Inter is the Trove typeface; system fonts remain as offline fallbacks.
         sans: [
           "Inter",
-          "system-ui",
           "-apple-system",
+          "system-ui",
+          "BlinkMacSystemFont",
           "Segoe UI",
           "Roboto",
           "Helvetica Neue",
@@ -81,6 +88,7 @@ module.exports = {
       borderRadius: {
         xl: "0.75rem",
         "2xl": "1rem",
+        "3xl": "1.25rem",
       },
       spacing: {
         "safe-b": "env(safe-area-inset-bottom, 0px)",

@@ -51,7 +51,7 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
     visual === "offline"
       ? "Saved on this device. It will sync when you're back online."
       : visual === "api-unavailable"
-        ? "Your connection is up but FinTrack can't reach the server. Retrying automatically — changes stay queued."
+        ? "Your connection is up but Trove can't reach the server. Retrying automatically — changes stay queued."
         : visual === "conflict"
         ? `${conflicts.length} ${conflicts.length === 1 ? "record needs" : "records need"} your attention.`
         : visual === "pending"
@@ -98,7 +98,7 @@ export function SyncStatusPanel() {
     visual === "offline"
       ? "You're offline. Your changes are saved on this device and will sync automatically when you're back online."
       : visual === "api-unavailable"
-        ? "Your device is online but the FinTrack server isn't answering. Your changes stay queued and sync resumes on its own — no need to keep tapping."
+        ? "Your device is online but the Trove server isn't answering. Your changes stay queued and sync resumes on its own — no need to keep tapping."
         : visual === "conflict"
         ? "Some records were changed on another device while you had unsynced edits. Review them to pick which version to keep."
         : visual === "pending"

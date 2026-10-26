@@ -128,7 +128,7 @@ export function MfaPage() {
         }
       >
         <p className="rounded-xl bg-surface-sunken px-4 py-3 text-sm text-muted">
-          Enter your email and password first and FinTrack will bring you straight here when your
+          Enter your email and password first and Trove will bring you straight here when your
           account has two-factor authentication enabled.
         </p>
         <Link to="/login" className="btn-primary mt-4 w-full">

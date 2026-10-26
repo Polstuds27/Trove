@@ -48,7 +48,7 @@ export function LoginPage() {
       subtitle="Sign in to sync your accounts, budgets and goals."
       footer={
         <>
-          New to FinTrack?{" "}
+          New to Trove?{" "}
           <Link to="/register" className="font-medium text-primary hover:underline">
             Create an account
           </Link>

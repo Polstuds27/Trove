@@ -147,19 +147,17 @@ export function BudgetsPage() {
       )}
 
       {ready && dataset.budgets.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<PiggyBank className="h-7 w-7" />}
-            title="No budgets yet"
-            description="Give your biggest spending categories a monthly ceiling and FinTrack tracks it for you — offline, automatically, with no spreadsheet. Start with one or two categories that surprise you at the end of the month."
-            action={
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/budgets/new")}>
-                Create your first budget
-              </Button>
-            }
-            secondaryAction={<LinkButton to="/categories">Review my categories</LinkButton>}
-          />
-        </Card>
+        <EmptyState
+          mascot="note"
+          title="No budgets yet"
+          description="Give your biggest spending categories a monthly ceiling and Trove tracks it for you — offline, automatically, with no spreadsheet. Start with one or two categories that surprise you at the end of the month."
+          action={
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/budgets/new")}>
+              Create your first budget
+            </Button>
+          }
+          secondaryAction={<LinkButton to="/categories">Review my categories</LinkButton>}
+        />
       ) : visible.length === 0 ? (
         <Card>
           <EmptyState

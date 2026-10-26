@@ -21,9 +21,12 @@ import {
   Wallet,
 } from "lucide-react";
 import {
+  BarChart,
   Button,
   Card,
   CardHeader,
+  ChartFrame,
+  ChartLegend,
   Divider,
   EmptyState,
   LinkButton,
@@ -71,7 +74,19 @@ export function OverviewPage() {
     () => summarize(dataset.transactions, previousRange, lookups.fx),
     [dataset.transactions, previousRange, lookups.fx],
   );
-  const trend = useMemo(() => series(dataset.transactions, period, lookups, 12), [dataset.transactions, period, lookups]);
+  // Cash-flow chart: the year's monthly buckets (the viewed month alone would
+  // yield a single point — the old mini-chart's condition could never fire).
+  const trend = useMemo(
+    () =>
+      series(
+        dataset.transactions,
+        { kind: "ytd", anchor, monthStartDay: preferences.monthStartDay },
+        lookups,
+        12,
+      ),
+    [dataset.transactions, anchor, preferences.monthStartDay, lookups],
+  );
+  const trendHasData = trend.some((point) => point.income > 0 || point.expense > 0);
   const budgets = useMemo(
     () => budgetProgress(dataset.budgets, dataset.transactions, lookups, anchor, preferences.monthStartDay),
     [dataset.budgets, dataset.transactions, lookups, anchor, preferences.monthStartDay],
@@ -113,21 +128,19 @@ export function OverviewPage() {
     return (
       <>
         <PageHeader title="Overview" subtitle="Your financial home" className="mb-2"/>
-        <Card>
-          <EmptyState
-            icon={<Wallet className="h-7 w-7" />}
-            title="Let's get your accounts in"
-            description="Start by adding the cash, bank and card accounts you actually use. Everything else — budgets, goals, reports — builds on top of them."
-            action={
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/accounts/new")}>
-                Add your first account
-              </Button>
-            }
-            secondaryAction={
-              <LinkButton to="/settings">Set your base currency</LinkButton>
-            }
-          />
-        </Card>
+        <EmptyState
+          mascot="idle"
+          title="Let's get your accounts in"
+          description="Start by adding the cash, bank and card accounts you actually use. Everything else — budgets, goals, reports — builds on top of them."
+          action={
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/accounts/new")}>
+              Add your first account
+            </Button>
+          }
+          secondaryAction={
+            <LinkButton to="/settings">Set your base currency</LinkButton>
+          }
+        />
       </>
     );
   }
@@ -160,109 +173,103 @@ export function OverviewPage() {
         }
       />
 
-      {/* 1. How much money do I have. */}
-      <Card className="overflow-hidden">
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted uppercase">
-            <Wallet aria-hidden="true" className="h-3.5 w-3.5" />
-            Total balance
-          </div>
-          <p className="tabular mt-1 text-display-lg leading-none font-semibold text-ink">
-            {formatMoney(totals.assets, currency)}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-            <span className="tabular">
-              {totals.liabilities !== 0 && (
-                <>
-                  {formatMoney(totals.liabilities, currency)} owed ·{" "}
-                </>
-              )}
-              Net worth <span className="font-semibold text-ink-soft">{formatMoney(totals.netWorth, currency)}</span>
-            </span>
-            {totals.creditAvailable !== null && (
-              <span className="tabular">
-                {formatMoney(totals.creditAvailable, currency)} credit available
+      {/* 1 + 2. How much money do I have, and how the month moved —
+          an un-carded, typographic balance block (direction contract):
+          hierarchy from type and whitespace, no hero-metric card. */}
+      <section aria-label="Balance summary" className="pb-5 pt-1">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <Stat
+            label="Total balance"
+            emphasis="hero"
+            className="max-w-md"
+            value={
+              <span className="tabular text-display-lg leading-none font-semibold text-ink">
+                {formatMoney(totals.assets, currency)}
               </span>
-            )}
-          </div>
-        </div>
+            }
+            caption={
+              <span className="tabular mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                <span>
+                  Net worth <span className="font-semibold text-ink-soft">{formatMoney(totals.netWorth, currency)}</span>
+                </span>
+                {totals.liabilities !== 0 && <span>{formatMoney(totals.liabilities, currency)} owed</span>}
+                {totals.creditAvailable !== null && (
+                  <span>{formatMoney(totals.creditAvailable, currency)} credit available</span>
+                )}
+              </span>
+            }
+          />
 
-        <Divider />
-
-        {/* 2. Where did it go this month. */}
-        <div className="grid grid-cols-3 divide-x divide-line">
-          <div className="px-3 py-3 sm:px-4">
-            <Stat
-              label="Income"
-              tone="income"
-              value={formatMoney(month.income, currency)}
-              caption={
-                incomeDelta !== null
-                  ? `${incomeDelta >= 0 ? "↑" : "↓"} ${formatPercent(Math.abs(incomeDelta))} vs last month`
-                  : undefined
-              }
-              icon={<ArrowUpRight className="h-3.5 w-3.5" />}
-            />
-          </div>
-          <div className="px-3 py-3 sm:px-4">
-            <Stat
-              label="Expenses"
-              tone="expense"
-              value={formatMoney(month.expense, currency)}
-              caption={
-                expenseDelta !== null
-                  ? `${expenseDelta >= 0 ? "↑" : "↓"} ${formatPercent(Math.abs(expenseDelta))} vs last month`
-                  : undefined
-              }
-              icon={<ArrowDownRight className="h-3.5 w-3.5" />}
-            />
-          </div>
-          <div className="px-3 py-3 sm:px-4">
-            <Stat
-              label="Cash flow"
-              tone={month.cashFlow >= 0 ? "income" : "expense"}
-              value={formatMoney(month.cashFlow, currency, { signed: true })}
-              caption={`${month.transactionCount} transactions`}
-              icon={<ArrowLeftRight className="h-3.5 w-3.5" />}
-            />
-          </div>
-        </div>
-
-        {trend.length > 1 && month.expense > 0 && (
-          <>
-            <Divider />
-            <div className="px-4 py-3">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-ink">Spending trend</p>
-                <LinkButton to="/statistics">Full report</LinkButton>
-              </div>
-              <div className="flex h-16 items-end gap-1" role="img" aria-label={`Monthly spending for ${formatMonth(anchor)}`}>
-                {trend.map((point) => {
-                  const max = Math.max(1, ...trend.map((p) => p.expense));
-                  const height = (point.expense / max) * 100;
-                  return (
-                    <div key={point.key} className="group relative flex-1">
-                      <div
-                        className="rounded-t-sm bg-primary/70 transition-colors group-hover:bg-primary"
-                        style={{ height: `${Math.max(3, height)}%` }}
-                        title={`${point.label}: ${formatMoney(point.expense, currency)}`}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-1 flex justify-between text-[10px] text-faint">
-                <span>{trend[0]?.label}</span>
-                <span>{trend[trend.length - 1]?.label}</span>
-              </div>
+          <dl className="grid grid-cols-3 gap-4 sm:gap-7">
+            <div>
+              <Stat
+                label="Income"
+                tone="income"
+                value={<span className="tabular">{formatMoney(month.income, currency)}</span>}
+                caption={
+                  incomeDelta !== null
+                    ? `${incomeDelta >= 0 ? "↑" : "↓"} ${formatPercent(Math.abs(incomeDelta))} vs last month`
+                    : undefined
+                }
+                icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+              />
             </div>
-          </>
-        )}
-      </Card>
+            <div>
+              <Stat
+                label="Expenses"
+                tone="expense"
+                value={<span className="tabular">{formatMoney(month.expense, currency)}</span>}
+                caption={
+                  expenseDelta !== null
+                    ? `${expenseDelta >= 0 ? "↑" : "↓"} ${formatPercent(Math.abs(expenseDelta))} vs last month`
+                    : undefined
+                }
+                icon={<ArrowDownRight className="h-3.5 w-3.5" />}
+              />
+            </div>
+            <div>
+              <Stat
+                label="Cash flow"
+                tone={month.cashFlow >= 0 ? "income" : "expense"}
+                value={<span className="tabular">{formatMoney(month.cashFlow, currency, { signed: true })}</span>}
+                caption={`${month.transactionCount} transactions`}
+                icon={<ArrowLeftRight className="h-3.5 w-3.5" />}
+              />
+            </div>
+          </dl>
+        </div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          {/* 3. Recent activity. */}
+          {/* 3. Where the money moved — the dashboard's one chart, on a
+              stable surface (charts never go on glass or bare canvas). */}
+          {trend.length > 1 && trendHasData ? (
+            <ChartFrame
+              title="Cash flow"
+              subtitle={`Income and spending · ${formatMonth(anchor)} year to date`}
+              legend={
+                <ChartLegend
+                  items={[
+                    { label: "Earned", color: "rgb(var(--color-income))" },
+                    { label: "Spent", color: "rgb(var(--color-primary))" },
+                  ]}
+                />
+              }
+              action={<LinkButton to="/statistics">Full report</LinkButton>}
+            >
+              <BarChart
+                data={trend.map((point) => ({ label: point.label, value: point.expense, secondary: point.income }))}
+                format={(value) => formatMoney(value, currency, { compact: true })}
+                ariaLabel={`Monthly income and spending through ${formatMonth(anchor)}`}
+                height={200}
+              />
+            </ChartFrame>
+          ) : (
+            <ChartFrame title="Cash flow" empty="Not enough history to chart yet" />
+          )}
+
+          {/* 4. Recent activity. */}
           <Card>
             <CardHeader
               title="Recent transactions"
@@ -437,7 +444,7 @@ export function OverviewPage() {
                 compact
                 icon={<ArrowDownRight className="h-6 w-6" />}
                 title="No budgets yet"
-                description="Set a monthly limit per category and FinTrack will track it for you."
+                description="Set a monthly limit per category and Trove will track it for you."
                 action={
                   <Button variant="secondary" size="sm" onClick={() => navigate("/budgets?new=1")}>
                     Create budget

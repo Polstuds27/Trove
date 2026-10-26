@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { CircleAlert, CircleHelp, CloudSync, Lock, TriangleAlert, WifiOff } from "lucide-react";
 import { Button } from "./Button";
+import { Mascot, type MascotPose } from "./Mascot";
 
 /* ------------------------------------------------------------------- empty state */
 
 export function EmptyState({
   icon,
+  mascot,
   title,
   description,
   action,
@@ -14,6 +16,8 @@ export function EmptyState({
   compact = false,
 }: {
   icon?: ReactNode;
+  /** Approved mascot pose shown instead of an icon on empty screens. */
+  mascot?: MascotPose;
   title: string;
   description?: ReactNode;
   action?: ReactNode;
@@ -34,6 +38,7 @@ export function EmptyState({
           {icon}
         </span>
       )}
+      {mascot && <Mascot pose={mascot} size={compact ? 88 : 176} />}
       <div className="max-w-sm space-y-1">
         <p className={`${compact ? "text-sm" : "text-base"} font-semibold text-ink`}>{title}</p>
         {description && <p className="text-sm leading-relaxed text-muted">{description}</p>}

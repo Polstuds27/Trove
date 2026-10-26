@@ -7,7 +7,7 @@ import {
   Menu,
   Plus,
   Settings,
-  Wallet,
+  Sprout,
   X,
 } from "lucide-react";
 import { isActive, ORGANISE_NAV, PLANNING_NAV, PRIMARY_NAV, SETTINGS_ITEM, type NavItem } from "../../app/navigation";
@@ -24,18 +24,20 @@ import { Dropdown } from "../ui/Controls";
 import { IconButton } from "../ui/Button";
 import { SyncIndicator } from "./SyncIndicator";
 
-function Brand() {
+function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5 px-1 py-3">
       <span
         aria-hidden="true"
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-contrast shadow-card"
       >
-        <Wallet className="h-5 w-5" />
+        <Sprout className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-ink">FinTrack</span>
-        <span className="block truncate text-xs text-muted">Personal Money Manager</span>
+        <span className="block truncate text-sm font-semibold tracking-tight text-ink">Trove</span>
+        {!compact && (
+          <span className="block truncate text-xs text-muted">Personal finance</span>
+        )}
       </span>
     </div>
   );
@@ -75,13 +77,17 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Net-worth tile in the rail: the sidebar's one glass surface (direction
+ * contract). Data stays derived on-device; only the treatment changed.
+ */
 function NetWorthCard() {
   const { lookups, ready } = useLocalData();
   const totals = portfolio(lookups);
   return (
-    <div className="card-flat px-3 py-3">
-      <p className="text-[11px] font-semibold tracking-wider text-faint uppercase">Net worth</p>
-      <p className="tabular mt-0.5 truncate text-title font-semibold text-ink">
+    <div className="glass rounded-2xl px-3.5 py-3.5">
+      <p className="text-[11px] font-medium tracking-wide text-muted">Net worth</p>
+      <p className="tabular mt-1 truncate text-title font-semibold tracking-tight text-ink">
         {ready ? formatMoney(totals.netWorth, lookups.dataset.baseCurrency) : "—"}
       </p>
       <p className="tabular mt-1 text-xs text-muted">
@@ -188,10 +194,10 @@ function BottomNav({ onQuickAdd }: { onQuickAdd: () => void }) {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur lg:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      className="fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden"
+      style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
     >
-      <div className="mx-auto grid max-w-lg grid-cols-5 items-stretch">
+      <div className="glass mx-auto grid max-w-lg grid-cols-5 items-stretch rounded-2xl">
         {items.slice(0, 2).map((item) => (
           <BottomLink key={item.to} item={item} active={isActive(item, pathname)} />
         ))}
@@ -200,7 +206,7 @@ function BottomNav({ onQuickAdd }: { onQuickAdd: () => void }) {
             type="button"
             onClick={onQuickAdd}
             aria-label="Add transaction"
-            className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-contrast shadow-raised transition-transform active:scale-95"
+            className="-mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-contrast shadow-raised transition-transform duration-150 ease-smooth active:scale-95"
           >
             <Plus aria-hidden="true" className="h-7 w-7" />
           </button>
@@ -220,8 +226,8 @@ function BottomLink({ item, active }: { item: NavItem; active: boolean }) {
       to={item.to}
       end={!item.matchNested}
       aria-current={active ? "page" : undefined}
-      className={`flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors ${
-        active ? "text-primary" : "text-muted"
+      className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-colors ${
+        active ? "text-primary" : "text-muted hover:text-ink"
       }`}
     >
       <Icon aria-hidden="true" className="h-5 w-5" />
@@ -286,19 +292,25 @@ export function AppShell({ children, onQuickAdd }: AppShellProps) {
     <div className="flex min-h-dvh bg-canvas">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-primary-contrast"
       >
         Skip to content
       </a>
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface/90 px-3 backdrop-blur sm:px-5">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-canvas px-3 sm:px-5">
           <IconButton label="Open menu" className="lg:hidden" onClick={() => setDrawerOpen(true)}>
             <Menu className="h-5 w-5" />
           </IconButton>
-          <div className="lg:hidden">
-            <span className="text-sm font-semibold text-ink">FinTrack</span>
+          <div className="flex items-center gap-2 lg:hidden">
+            <span
+              aria-hidden="true"
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-contrast"
+            >
+              <Sprout className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-semibold tracking-tight text-ink">Trove</span>
           </div>
 
           <div className="ml-auto flex items-center gap-1">

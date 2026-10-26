@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /*
- * FinTrack design tokens (docs/theme.md).
+ * Trove design tokens.
  *
  * Single source of truth: every colour lives here as an RGB triplet, is exposed
  * as a CSS variable, and is consumed by Tailwind through `tailwind.config.cjs`.
@@ -11,8 +11,11 @@
  * depends on the Tailwind config being reloaded - the config caches for the
  * lifetime of a Vite process.
  *
- * Light is the default; `[data-theme="dark"]` overrides the semantic names only,
- * so components never branch on the theme.
+ * World: warm cream paper ground, forest actions, sage accents, sand warmth
+ * (see .impeccable/surfaces/web-src.md direction contract). Light is the
+ * default; `[data-theme="dark"]` overrides the semantic names only, so
+ * components never branch on the theme. Dark is a warm night forest, not a
+ * desaturated light theme.
  */
 
 @layer base {
@@ -20,86 +23,102 @@
     color-scheme: light;
 
     /* Brand ------------------------------------------------------------ */
-    --color-primary: 15 118 110; /* #0F766E */
-    --color-primary-hover: 13 95 89; /* #0D5F59 */
-    --color-primary-soft: 204 251 241; /* #CCFBF1 */
-    --color-primary-contrast: 255 255 255;
-    --color-accent: 45 212 191; /* #2DD4BF */
+    --color-primary: 41 71 55; /* #294737 forest */
+    --color-primary-hover: 34 59 46; /* darker forest */
+    --color-primary-soft: 210 218 197; /* sage-tinted soft fill */
+    --color-primary-contrast: 247 240 229; /* cream on forest */
+    --color-accent: 122 138 106; /* sage, darkened for AA text use */
+    --color-sage: 155 167 138; /* #9BA78A brand sage */
+    --color-forest: 41 71 55; /* #294737 brand forest */
+    --color-sand: 223 197 173; /* #DFC5AD brand sand */
 
     /* Surfaces & text --------------------------------------------------- */
-    --color-canvas: 248 250 252; /* #F8FAFC */
-    --color-surface: 255 255 255;
+    --color-canvas: 247 240 229; /* #F7F0E5 cream */
+    --color-surface: 255 253 250;
     --color-surface-raised: 255 255 255;
-    --color-surface-sunken: 241 245 249;
-    --color-ink: 15 23 42; /* #0F172A */
-    --color-ink-soft: 30 41 59;
-    --color-muted: 100 116 139; /* #64748B */
-    --color-faint: 148 163 184;
-    --color-line: 226 232 240; /* #E2E8F0 */
-    --color-line-strong: 203 213 225;
+    --color-surface-sunken: 240 233 220; /* sunken cream */
+    --color-ink: 27 42 34; /* #1B2A22 */
+    --color-ink-soft: 49 64 55;
+    --color-muted: 107 122 110; /* #6B7A6E */
+    --color-faint: 138 150 139; /* placeholder-level, still AA-ish on cream */
+    --color-line: 217 211 201; /* #D9D3C9 warm gray */
+    --color-line-strong: 194 187 174;
 
     /* Financial semantics ----------------------------------------------- */
-    --color-income: 22 163 74; /* #16A34A */
-    --color-expense: 220 38 38; /* #DC2626 */
-    --color-transfer: 37 99 235; /* #2563EB */
-    --color-warning: 217 119 6; /* #D97706 */
-    --color-info: 37 99 235; /* #2563EB */
+    --color-income: 31 110 66; /* deep green, AA on cream */
+    --color-expense: 185 55 45; /* warm red, AA on cream */
+    --color-transfer: 63 96 138; /* muted warm blue */
+    --color-warning: 160 95 16; /* warm amber */
+    --color-info: 63 96 138;
 
     /* Tinted backgrounds for the semantics above */
-    --color-income-soft: 220 252 231;
-    --color-expense-soft: 254 226 226;
-    --color-transfer-soft: 219 234 254;
-    --color-warning-soft: 254 243 199;
-    --color-info-soft: 219 234 254;
-    --color-primary-soft-bg: 240 253 250;
+    --color-income-soft: 224 236 226;
+    --color-expense-soft: 245 225 220;
+    --color-transfer-soft: 224 231 239;
+    --color-warning-soft: 244 231 213;
+    --color-info-soft: 224 231 239;
+    --color-primary-soft-bg: 231 234 220;
 
     /* Effects ----------------------------------------------------------- */
-    --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
-    --shadow-raised: 0 4px 12px rgb(15 23 42 / 0.08);
-    --shadow-overlay: 0 20px 45px rgb(15 23 42 / 0.18);
-    --ring-focus: 45 212 191;
+    --shadow-card: 0 1px 2px rgb(41 71 55 / 0.05), 0 2px 6px rgb(41 71 55 / 0.05);
+    --shadow-raised: 0 4px 14px rgb(41 71 55 / 0.12);
+    --shadow-overlay: 0 20px 45px rgb(27 42 34 / 0.22);
+    --ring-focus: 89 105 79; /* deepened sage: visible against cream and white */
+
+    /* Glass (restrained: floating nav, quick sheet, balance tile only).
+       Opaque fallback for no-backdrop-filter browsers is in @supports below. */
+    --glass-bg: 255 253 250 / 0.72;
+    --glass-border: 255 255 255 / 0.65;
+    --glass-blur: 16px;
 
     /* Elevation scale (used by class utilities) */
-    --color-overlay: 15 23 42;
+    --color-overlay: 27 42 34;
   }
 
   [data-theme="dark"] {
     color-scheme: dark;
 
-    --color-primary: 45 212 191; /* accent reads better on dark */
-    --color-primary-hover: 94 234 212;
-    --color-primary-soft: 19 78 74;
-    --color-primary-contrast: 2 44 41;
-    --color-accent: 45 212 191;
+    --color-primary: 140 164 143; /* light forest for dark surfaces */
+    --color-primary-hover: 160 183 162;
+    --color-primary-soft: 47 64 51;
+    --color-primary-contrast: 17 26 20; /* dark text on light forest */
+    --color-accent: 155 167 138; /* #9BA78A sage */
+    --color-sage: 155 167 138;
+    --color-forest: 140 164 143;
+    --color-sand: 176 152 130;
 
-    --color-canvas: 2 6 12;
-    --color-surface: 12 20 32;
-    --color-surface-raised: 18 28 43;
-    --color-surface-sunken: 8 14 24;
-    --color-ink: 226 232 240;
-    --color-ink-soft: 203 213 225;
-    --color-muted: 148 163 184;
-    --color-faint: 100 116 139;
-    --color-line: 30 41 59;
-    --color-line-strong: 51 65 85;
+    --color-canvas: 19 28 22; /* #131C16 warm night forest */
+    --color-surface: 26 37 30;
+    --color-surface-raised: 34 47 38;
+    --color-surface-sunken: 15 23 18;
+    --color-ink: 240 234 223; /* cream ink */
+    --color-ink-soft: 214 208 196;
+    --color-muted: 156 167 153;
+    --color-faint: 124 135 122;
+    --color-line: 44 58 48;
+    --color-line-strong: 60 76 65;
 
-    --color-income: 74 222 128;
-    --color-expense: 248 113 113;
-    --color-transfer: 96 165 250;
-    --color-warning: 251 191 36;
-    --color-info: 96 165 250;
+    --color-income: 94 191 133;
+    --color-expense: 240 124 110;
+    --color-transfer: 133 164 205;
+    --color-warning: 231 174 74;
+    --color-info: 133 164 205;
 
-    --color-income-soft: 20 63 45;
-    --color-expense-soft: 76 26 26;
-    --color-transfer-soft: 23 48 86;
-    --color-warning-soft: 76 51 12;
-    --color-info-soft: 23 48 86;
-    --color-primary-soft-bg: 12 40 38;
+    --color-income-soft: 30 58 42;
+    --color-expense-soft: 74 37 31;
+    --color-transfer-soft: 31 47 64;
+    --color-warning-soft: 66 51 24;
+    --color-info-soft: 31 47 64;
+    --color-primary-soft-bg: 32 45 36;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-raised: 0 6px 18px rgb(0 0 0 / 0.45);
-    --shadow-overlay: 0 24px 50px rgb(0 0 0 / 0.6);
-    --ring-focus: 45 212 191;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.3);
+    --shadow-raised: 0 6px 18px rgb(0 0 0 / 0.5);
+    --shadow-overlay: 0 24px 50px rgb(0 0 0 / 0.65);
+    --ring-focus: 155 167 138; /* sage reads clearly on night forest */
+
+    --glass-bg: 30 42 34 / 0.72;
+    --glass-border: 155 167 138 / 0.22;
+    --glass-blur: 16px;
   }
 
   * {
@@ -118,6 +137,32 @@
     font-feature-settings: "cv02", "cv03", "cv04", "tnum" 0;
   }
 
+  /* Browser surfaces belong to the design: selection, caret, scrollbars. */
+  ::selection {
+    background-color: rgb(var(--color-primary) / 0.22);
+    color: rgb(var(--color-ink));
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--color-line-strong) / 0.8);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--color-muted) / 0.8);
+  }
+
   /* Financial figures should always be tabular so columns line up. */
   .tabular,
   [data-numeric="true"] {
@@ -127,6 +172,7 @@
   :focus-visible {
     outline: 2px solid rgb(var(--ring-focus));
     outline-offset: 2px;
+    border-radius: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -341,8 +387,14 @@
   }
 
   .nav-link-active {
-    background-color: rgb(var(--color-primary-soft-bg));
-    color: rgb(var(--color-primary));
+    background-color: rgb(var(--color-primary));
+    color: rgb(var(--color-primary-contrast));
+    box-shadow: var(--shadow-card);
+  }
+
+  .nav-link-active:hover {
+    background-color: rgb(var(--color-primary-hover));
+    color: rgb(var(--color-primary-contrast));
   }
 
   /* ------------------------------------------------------------------ tables */
@@ -366,6 +418,30 @@
   .skeleton {
     @apply animate-pulse rounded-md;
     background-color: rgb(var(--color-surface-sunken));
+  }
+
+  /* ------------------------------------------------------------------- glass
+     Restrained material: floating mobile nav, quick-action sheet, balance
+     tile only (direction contract). Never decorative blur on cards/tables. */
+  .glass {
+    background-color: rgb(var(--glass-bg));
+    border: 1px solid rgb(var(--glass-border));
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* Opaque fallback where backdrop-filter is unsupported. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background-color: rgb(var(--color-surface));
+      border-color: rgb(var(--color-line));
+    }
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass {
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+      backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    }
   }
 
   /* ------------------------------------------------------------ scroll areas */

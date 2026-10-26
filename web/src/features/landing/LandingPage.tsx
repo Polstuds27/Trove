@@ -10,18 +10,17 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BarChart3,
-  CalendarDays,
   CloudOff,
   Globe,
   Lock,
   PiggyBank,
   RefreshCw,
-  Repeat,
   ShieldCheck,
   Tags,
   Target,
   Wallet,
 } from "lucide-react";
+import { Mascot } from "../../components/ui";
 import { InstallSection } from "./InstallSection";
 
 interface Feature {
@@ -115,7 +114,7 @@ export function LandingPage() {
         <div className="mx-auto flex h-14 max-w-app items-center justify-between gap-3 px-4 sm:px-6">
           <Link to="/landing" className="flex items-center gap-2.5">
             <BrandMark className="h-8 w-8" />
-            <span className="text-sm font-semibold text-ink">FinTrack</span>
+            <span className="text-sm font-semibold text-ink">Trove</span>
           </Link>
 
           <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">
@@ -149,7 +148,7 @@ export function LandingPage() {
             className="pointer-events-none absolute inset-0"
             style={{
               backgroundImage:
-                "radial-gradient(circle at 82% 18%, rgb(45 212 191 / 0.14), transparent 45%), radial-gradient(circle at 12% 78%, rgb(15 118 110 / 0.10), transparent 42%)",
+                "radial-gradient(circle at 82% 18%, rgb(155 167 138 / 0.16), transparent 45%), radial-gradient(circle at 12% 78%, rgb(41 71 55 / 0.09), transparent 42%)",
             }}
           />
           <div className="relative mx-auto grid max-w-app gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-24">
@@ -162,7 +161,7 @@ export function LandingPage() {
                 Your money, clearly.
               </h1>
               <p className="mt-4 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                FinTrack brings every account, transaction, budget and goal
+                Trove brings every account, transaction, budget and goal
                 into one calm ledger — and it keeps working when your
                 connection doesn't. Install it on your phone like any other
                 app, straight from this page.
@@ -197,65 +196,8 @@ export function LandingPage() {
               </dl>
             </div>
 
-            {/* Phone preview: a static mock of the app shell, purely decorative. */}
-            <div aria-hidden="true" className="relative mx-auto w-full max-w-[17rem]">
-              <div className="rounded-[2rem] border-8 border-ink bg-ink p-1 shadow-overlay">
-                <div className="overflow-hidden rounded-[1.4rem] bg-canvas">
-                  <div className="flex items-center justify-between border-b border-line bg-surface px-3.5 py-2.5">
-                    <span className="flex items-center gap-1.5 text-[11px] font-semibold text-ink">
-                      <BrandMark className="h-5 w-5 rounded-md" />
-                      FinTrack
-                    </span>
-                    <span className="h-1.5 w-1.5 rounded-full bg-income" />
-                  </div>
-                  <div className="space-y-2.5 p-3.5">
-                    <div className="rounded-xl bg-primary p-3 text-primary-contrast">
-                      <p className="text-[10px] uppercase opacity-70">Net worth</p>
-                      <p className="tabular text-xl font-semibold">$12,480.50</p>
-                      <p className="tabular text-[10px] opacity-70">+$342.18 this month</p>
-                    </div>
-                    <div className="rounded-xl bg-surface p-3 shadow-card">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-medium text-ink">Groceries budget</span>
-                        <span className="tabular text-muted">$310 / $450</span>
-                      </div>
-                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-                        <div className="h-full w-[69%] rounded-full bg-primary" />
-                      </div>
-                    </div>
-                    {[
-                      { name: "Coffee", cat: "Food & dining", amount: "-$4.50", tone: "text-expense" },
-                      { name: "Salary", cat: "Income", amount: "+$3,200", tone: "text-income" },
-                      { name: "Rent", cat: "Housing", amount: "-$980", tone: "text-expense" },
-                    ].map((row) => (
-                      <div
-                        key={row.name}
-                        className="flex items-center justify-between rounded-xl bg-surface px-3 py-2.5 shadow-card"
-                      >
-                        <div>
-                          <p className="text-[11px] font-medium text-ink">{row.name}</p>
-                          <p className="text-[10px] text-muted">{row.cat}</p>
-                        </div>
-                        <span className={`tabular text-[11px] font-semibold ${row.tone}`}>
-                          {row.amount}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-around rounded-xl bg-surface px-2 py-2 shadow-card">
-                      {[Wallet, Repeat, BarChart3, CalendarDays].map((Icon, i) => (
-                        <Icon
-                          key={i}
-                          className={`h-3.5 w-3.5 ${i === 0 ? "text-primary" : "text-faint"}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <span className="badge badge-synced absolute -right-2 -bottom-3 shadow-raised">
-                <RefreshCw aria-hidden="true" className="h-3 w-3" />
-                Synced
-              </span>
+            <div aria-hidden="true" className="relative mx-auto w-full max-w-[22rem]">
+              <Mascot pose="idle" size={256} className="mx-auto" />
             </div>
           </div>
         </section>
@@ -278,7 +220,7 @@ export function LandingPage() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {FEATURES.map(({ icon: Icon, title, body }) => (
                 <div key={title} className="card p-5">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-bg text-primary">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft-bg text-primary">
                     <Icon aria-hidden="true" className="h-5 w-5" />
                   </span>
                   <h3 className="mt-3 text-sm font-semibold text-ink">{title}</h3>
@@ -306,7 +248,7 @@ export function LandingPage() {
                   >
                     {index + 1}
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-bg text-primary">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft-bg text-primary">
                     <Icon aria-hidden="true" className="h-5 w-5" />
                   </span>
                   <h3 className="mt-3 text-sm font-semibold text-ink">{step}</h3>
@@ -349,7 +291,7 @@ export function LandingPage() {
           <div className="flex items-center gap-2.5">
             <BrandMark className="h-8 w-8" />
             <div>
-              <p className="text-sm font-semibold text-ink">FinTrack</p>
+              <p className="text-sm font-semibold text-ink">Trove</p>
               <p className="text-xs text-muted">Personal Money Manager — offline-first PWA</p>
               <p className="text-xs text-muted">Developed By: <a href="https://github.com/Polstuds27" className="text-muted hover:text-ink">
               Polstuds27

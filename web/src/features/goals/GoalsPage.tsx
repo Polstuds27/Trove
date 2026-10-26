@@ -91,19 +91,17 @@ export function GoalsPage() {
       )}
 
       {ready && dataset.goals.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Target className="h-7 w-7" />}
-            title="No savings goals yet"
-            description="A goal turns an abstract number into something you can chase: it tracks what you've put aside, tells you what's left, and shows whether a target date is realistic. Create one for the next thing you're saving for."
-            action={
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/goals/new")}>
-                Create a goal
-              </Button>
-            }
-            secondaryAction={<LinkButton to="/transactions?add=transfer">Record a contribution</LinkButton>}
-          />
-        </Card>
+        <EmptyState
+          mascot="save"
+          title="No savings goals yet"
+          description="A goal turns an abstract number into something you can chase: it tracks what you've put aside, tells you what's left, and shows whether a target date is realistic. Create one for the next thing you're saving for."
+          action={
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/goals/new")}>
+              Create a goal
+            </Button>
+          }
+          secondaryAction={<LinkButton to="/transactions?add=transfer">Record a contribution</LinkButton>}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {progress.map((item) => (

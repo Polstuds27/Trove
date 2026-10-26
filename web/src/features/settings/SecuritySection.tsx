@@ -157,7 +157,7 @@ export function SecuritySection() {
   function downloadCodes() {
     if (!recoveryCodes) return;
     const blob = new Blob(
-      [`FinTrack recovery codes for ${profile?.email ?? "your account"}\nEach code works once. Keep them somewhere safe.\n\n${recoveryCodes.join("\n")}\n`],
+      [`Trove recovery codes for ${profile?.email ?? "your account"}\nEach code works once. Keep them somewhere safe.\n\n${recoveryCodes.join("\n")}\n`],
       { type: "text/plain" },
     );
     const url = URL.createObjectURL(blob);

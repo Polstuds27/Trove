@@ -11,8 +11,15 @@ import { ToastProvider } from "./components/ui/Toast";
 import { ErrorBoundary } from "./components/ui";
 import { NetworkBanner } from "./components/layout/NetworkBanner";
 import { registerServiceWorker } from "./app/pwa";
+import { db } from "./db";
 
 registerServiceWorker();
+
+// Dev-only handle: lets the visual-QA pass seed synthetic data into IndexedDB
+// from the console. `import.meta.env.DEV` is false in production builds.
+if (import.meta.env.DEV) {
+  (window as unknown as { __trove?: unknown }).__trove = { db };
+}
 
 const queryClient = new QueryClient();
 

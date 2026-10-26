@@ -10,7 +10,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  BarChart3,
   LineChart as LineIcon,
   PieChart,
   TrendingUp,
@@ -145,22 +144,20 @@ export function StatisticsPage() {
     return (
       <div className="space-y-4">
         <PageHeader title="Statistics" />
-        <Card>
-          <EmptyState
-            icon={<BarChart3 className="h-7 w-7" />}
-            title="Nothing to report yet"
-            description="Statistics are built from your own transactions, which is why they work with no connection. Record a handful of entries and this screen fills in — spending by category, cash flow over time and net worth."
-            action={
-              <button
-                type="button"
-                onClick={() => navigate("/transactions/new")}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Record your first transaction
-              </button>
-            }
-          />
-        </Card>
+        <EmptyState
+          mascot="read"
+          title="Nothing to report yet"
+          description="Statistics are built from your own transactions, which is why they work with no connection. Record a handful of entries and this screen fills in — spending by category, cash flow over time and net worth."
+          action={
+            <button
+              type="button"
+              onClick={() => navigate("/transactions/new")}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Record your first transaction
+            </button>
+          }
+        />
       </div>
     );
   }

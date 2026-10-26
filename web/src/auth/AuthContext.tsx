@@ -78,7 +78,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 /** Shown when the previous account's rows can't be removed before a sign-in. */
 export const CACHE_CLAIM_ERROR =
-  "Couldn't clear the previous account's data. Close any other FinTrack tabs, then try again.";
+  "Couldn't clear the previous account's data. Close any other Trove tabs, then try again.";
 
 /** True when sign-in aborted on an unverifiable local cache (not on credentials). */
 export function isCacheClaimError(error: unknown): boolean {
@@ -183,7 +183,7 @@ async function claimLocalData(nextEmail: string, options?: { repair?: boolean })
       // boot check never destroys data on its own.
       if (!options?.repair) {
         lastWipeFailure = describeFailure(error);
-        console.error("FinTrack: local cache wipe failed", lastWipeFailure);
+        console.error("Trove: local cache wipe failed", lastWipeFailure);
         throw new ApiError(500, CACHE_CLAIM_ERROR);
       }
       try {
@@ -193,10 +193,10 @@ async function claimLocalData(nextEmail: string, options?: { repair?: boolean })
         ]);
         // Prove the database is usable again before stamping ownership of it.
         await db.open();
-        console.warn("FinTrack: cache wipe failed; recovered with a full database reset");
+        console.warn("Trove: cache wipe failed; recovered with a full database reset");
       } catch (repairError) {
         lastWipeFailure = describeFailure(repairError);
-        console.error("FinTrack: local cache wipe and repair failed", lastWipeFailure);
+        console.error("Trove: local cache wipe and repair failed", lastWipeFailure);
         throw new ApiError(500, CACHE_CLAIM_ERROR);
       }
     }
@@ -306,7 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (cause) {
       // Local state is already cleared; the next sign-in re-checks the cache
       // and refuses to continue if these rows are still here.
-      console.warn("FinTrack: local cache wipe failed on sign-out", cause);
+      console.warn("Trove: local cache wipe failed on sign-out", cause);
     }
   }, []);
 
@@ -347,7 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!email) return;
     claimLocalData(email).catch((error: unknown) => {
-      console.error("FinTrack: could not verify whose cache this is", error);
+      console.error("Trove: could not verify whose cache this is", error);
     });
   }, [email]);
 

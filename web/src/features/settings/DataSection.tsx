@@ -164,7 +164,7 @@ export function DataSection() {
     try {
       const parsed: unknown = JSON.parse(await file.text());
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("That file is not a FinTrack snapshot.");
+        throw new Error("That file is not a Trove snapshot.");
       }
       const snapshot = parsed as Record<string, unknown>;
       setSnapshotFile(snapshot);

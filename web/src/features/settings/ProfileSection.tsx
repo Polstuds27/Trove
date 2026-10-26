@@ -214,7 +214,7 @@ export function ProfileSection() {
         tone="danger"
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => void deleteAccount()}
-        title="Delete your FinTrack account?"
+        title="Delete your Trove account?"
         confirmLabel="Delete everything"
         message="This erases all accounts, transactions, budgets and goals on the server. It cannot be undone."
       />

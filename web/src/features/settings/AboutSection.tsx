@@ -33,7 +33,7 @@ export function AboutSection() {
 
   return (
     <div className="space-y-4">
-      <Panel title="FinTrack" description="Personal money manager — offline first.">
+      <Panel title="Trove" description="Personal money manager — offline first.">
         <dl className="space-y-0.5">
           <DetailRow label="Version">{version}</DetailRow>
           <DetailRow label="Build">{import.meta.env.MODE}</DetailRow>

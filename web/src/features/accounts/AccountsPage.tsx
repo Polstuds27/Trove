@@ -169,23 +169,21 @@ export function AccountsPage() {
       </Card>
 
       {totals.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Wallet className="h-7 w-7" />}
-            title="No accounts yet"
-            description="Add the cash, bank and card accounts you actually use. FinTrack recalculates balances from your transactions, so an accurate opening balance is all it needs."
-            action={
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-                Add your first account
-              </Button>
-            }
-            secondaryAction={
-              <Button variant="ghost" onClick={() => navigate("/settings")}>
-                Change base currency
-              </Button>
-            }
-          />
-        </Card>
+        <EmptyState
+          mascot="save"
+          title="No accounts yet"
+          description="Add the cash, bank and card accounts you actually use. Trove recalculates balances from your transactions, so an accurate opening balance is all it needs."
+          action={
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+              Add your first account
+            </Button>
+          }
+          secondaryAction={
+            <Button variant="ghost" onClick={() => navigate("/settings")}>
+              Change base currency
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-4">
           {grouped.map((group) => (
