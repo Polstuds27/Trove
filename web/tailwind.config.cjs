@@ -55,8 +55,30 @@ module.exports = {
         // Brand palette (direction contract): available for deliberate use;
         // most surfaces should use the semantic names above.
         forest: "rgb(var(--color-forest) / <alpha-value>)",
-        sage: "rgb(var(--color-sage) / <alpha-value>)",
+        sage: {
+          DEFAULT: "rgb(var(--color-sage) / <alpha-value>)",
+          light: "rgb(var(--color-sage-light) / <alpha-value>)",
+        },
         sand: "rgb(var(--color-sand) / <alpha-value>)",
+        peach: {
+          DEFAULT: "rgb(var(--color-peach) / <alpha-value>)",
+          deep: "rgb(var(--color-peach-deep) / <alpha-value>)",
+        },
+        cream: "rgb(var(--color-cream) / <alpha-value>)",
+        moss: "rgb(var(--color-moss) / <alpha-value>)",
+        clay: "rgb(var(--color-clay) / <alpha-value>)",
+        terracotta: "rgb(var(--color-terracotta) / <alpha-value>)",
+        amber: "rgb(var(--color-amber) / <alpha-value>)",
+        hero: "var(--hero-bg)",
+        progress: "rgb(var(--color-progress) / <alpha-value>)",
+        chart: {
+          1: "rgb(var(--color-chart-1) / <alpha-value>)",
+          2: "rgb(var(--color-chart-2) / <alpha-value>)",
+          3: "rgb(var(--color-chart-3) / <alpha-value>)",
+          4: "rgb(var(--color-chart-4) / <alpha-value>)",
+          5: "rgb(var(--color-chart-5) / <alpha-value>)",
+          6: "rgb(var(--color-chart-6) / <alpha-value>)",
+        },
       },
       boxShadow: {
         card: "var(--shadow-card)",

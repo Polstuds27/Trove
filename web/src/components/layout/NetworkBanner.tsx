@@ -43,7 +43,7 @@ export function NetworkBanner() {
     return (
       <div
         role="status"
-        className="fixed inset-x-3 bottom-20 z-[45] flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-surface px-3 py-2.5 shadow-lg backdrop-blur sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm lg:bottom-4"
+        className="fixed inset-x-3 bottom-[calc(100px+env(safe-area-inset-bottom,0px))] z-[45] flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-surface px-3 py-2.5 shadow-lg backdrop-blur sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm lg:bottom-4"
       >
         <span className="flex min-w-0 items-center gap-2 text-sm text-ink">
           <CloudUpload aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
@@ -66,7 +66,7 @@ export function NetworkBanner() {
       <div
         role="status"
         aria-live="polite"
-        className="fixed inset-x-3 bottom-20 z-[45] flex items-start gap-2.5 rounded-xl border border-warning/50 bg-warning-soft px-3 py-2.5 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm lg:bottom-4"
+        className="fixed inset-x-3 bottom-[calc(100px+env(safe-area-inset-bottom,0px))] z-[45] flex items-start gap-2.5 rounded-xl border border-warning/50 bg-warning-soft px-3 py-2.5 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm lg:bottom-4"
       >
         <WifiOff aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
         <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function NetworkBanner() {
     return (
       <div
         role="alert"
-        className="fixed inset-x-3 bottom-20 z-[45] flex items-center justify-between gap-3 rounded-xl border border-expense/40 bg-surface px-3 py-2.5 shadow-lg backdrop-blur sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm lg:bottom-4"
+        className="fixed inset-x-3 bottom-[calc(100px+env(safe-area-inset-bottom,0px))] z-[45] flex items-center justify-between gap-3 rounded-xl border border-expense/40 bg-surface px-3 py-2.5 shadow-lg backdrop-blur sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm lg:bottom-4"
       >
         <span className="flex min-w-0 items-center gap-2 text-sm text-ink">
           <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0 text-expense" />

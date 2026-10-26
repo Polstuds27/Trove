@@ -1,16 +1,28 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
+  ArrowLeftRight,
   Bell,
+  CalendarClock,
+  ChevronRight,
   CircleAlert,
+  CreditCard,
+  Ellipsis,
+  House,
+  Landmark,
+  LayoutGrid,
   LogOut,
-  Menu,
+  PiggyBank,
   Plus,
+  Repeat,
   Settings,
   Sprout,
+  Target,
+  Wallet,
   X,
+  type LucideIcon,
 } from "lucide-react";
-import { isActive, ORGANISE_NAV, PLANNING_NAV, PRIMARY_NAV, SETTINGS_ITEM, type NavItem } from "../../app/navigation";
+import { isActive, ORGANISE_NAV, PLANNING_NAV, SETTINGS_ITEM, type NavItem } from "../../app/navigation";
 import { useAuth } from "../../auth/AuthContext";
 import { useLocalData } from "../../features/analytics/useLocalData";
 import { portfolio } from "../../features/analytics/engine";
@@ -24,334 +36,396 @@ import { Dropdown } from "../ui/Controls";
 import { IconButton } from "../ui/Button";
 import { SyncIndicator } from "./SyncIndicator";
 
-function Brand({ compact = false }: { compact?: boolean }) {
+/* ------------------------------------------------------------------ sidebar */
+
+function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-1 py-3">
+    <NavLink to="/overview" className="flex items-center gap-3 px-1" aria-label="Trove home">
       <span
         aria-hidden="true"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-contrast shadow-card"
+        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-white text-primary shadow-sm dark:bg-cream dark:text-ink"
       >
-        <Sprout className="h-5 w-5" />
+        <Sprout className="h-[19px] w-[19px]" />
       </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold tracking-tight text-ink">Trove</span>
-        {!compact && (
-          <span className="block truncate text-xs text-muted">Personal finance</span>
-        )}
-      </span>
+      <span className="text-[24px] font-semibold leading-none tracking-[-0.03em] text-primary">Trove</span>
+    </NavLink>
+  );
+}
+
+function BalanceCard() {
+  const { lookups, ready } = useLocalData();
+  const totals = portfolio(lookups);
+  const accountCount = lookups.dataset.accounts.filter((account) => !account.archived).length;
+  return (
+    <div className="mt-5 rounded-[24px] border border-white/70 bg-surface-raised/90 px-4 py-3.5 shadow-sm dark:border-line dark:bg-surface-raised">
+      <p className="text-xs text-muted">Total balance</p>
+      <p className="tabular mt-1.5 truncate text-[22px] font-semibold leading-none tracking-[-0.03em] text-primary">
+        {ready ? formatMoney(totals.assets, lookups.dataset.baseCurrency) : "—"}
+      </p>
+      <p className="mt-2 text-xs text-muted">
+        {ready ? `${accountCount} ${accountCount === 1 ? "account" : "accounts"}` : "Loading…"}
+      </p>
     </div>
   );
 }
 
-function NavList({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
+function SidebarLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
   const { pathname } = useLocation();
+  const active = isActive(item, pathname);
   return (
-    <ul className="space-y-0.5">
-      {items.map((item) => {
-        const active = isActive(item, pathname);
-        const Icon = item.icon;
-        return (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={!item.matchNested}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={`nav-link ${active ? "nav-link-active" : ""}`}
-            >
-              <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          </li>
-        );
-      })}
-    </ul>
+    <li>
+      <NavLink
+        to={item.to}
+        end={!item.matchNested}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={`trove-nav-item ${active ? "trove-nav-active" : ""}`}
+      >
+        <span
+          aria-hidden="true"
+          className={`h-2 w-2 shrink-0 rounded-full ${
+            active ? "bg-white dark:bg-ink" : "bg-sage"
+          }`}
+        />
+        <span className="truncate">{item.label}</span>
+      </NavLink>
+    </li>
   );
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
+function SidebarSection({ title }: { title: string }) {
   return (
-    <p className="px-3 pb-1 pt-4 text-[11px] font-semibold tracking-wider text-faint uppercase">
-      {children}
+    <p className="px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+      {title}
     </p>
   );
 }
 
-/**
- * Net-worth tile in the rail: the sidebar's one glass surface (direction
- * contract). Data stays derived on-device; only the treatment changed.
- */
-function NetWorthCard() {
-  const { lookups, ready } = useLocalData();
-  const totals = portfolio(lookups);
-  return (
-    <div className="glass rounded-2xl px-3.5 py-3.5">
-      <p className="text-[11px] font-medium tracking-wide text-muted">Net worth</p>
-      <p className="tabular mt-1 truncate text-title font-semibold tracking-tight text-ink">
-        {ready ? formatMoney(totals.netWorth, lookups.dataset.baseCurrency) : "—"}
-      </p>
-      <p className="tabular mt-1 text-xs text-muted">
-        {ready ? (
-          <>
-            {formatMoney(totals.assets, lookups.dataset.baseCurrency)} assets
-            {totals.liabilities !== 0 && ` · ${formatMoney(totals.liabilities, lookups.dataset.baseCurrency)} debt`}
-          </>
-        ) : (
-          "Loading…"
-        )}
-      </p>
-    </div>
-  );
-}
-
-function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
-  return (
-    // `flex-1 min-h-0` (not `h-full`): inside the fixed-height sidebar this is
-    // the one region that scrolls, and only when the links exceed the screen.
-    <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 pt-3">
-      <NetWorthCard />
-      <div className="pt-3">
-        <NavList items={PRIMARY_NAV} onNavigate={onNavigate} />
-      </div>
-      <SectionLabel>Planning</SectionLabel>
-      <NavList items={PLANNING_NAV} onNavigate={onNavigate} />
-      <SectionLabel>Organise</SectionLabel>
-      <NavList items={ORGANISE_NAV} onNavigate={onNavigate} />
-      <div className="pt-4">
-        <NavLink
-          to={SETTINGS_ITEM.to}
-          onClick={onNavigate}
-          className={({ isActive: on }) => `nav-link ${on ? "nav-link-active" : ""}`}
-        >
-          <Settings aria-hidden="true" className="h-5 w-5 shrink-0" />
-          <span>Settings</span>
-        </NavLink>
-      </div>
-    </div>
-  );
-}
-
-function UserMenu() {
-  const { email, logout } = useAuth();
+function SidebarFooter() {
   const { conflicts } = useSync();
+  const { email, logout } = useAuth();
   const navigate = useNavigate();
   const cached = useLiveQuery(() => db.profile.get(PROFILE_KEY), []);
   const cachedName = cached ? `${cached.first_name} ${cached.last_name}`.trim() : "";
+  const name = cachedName || email || "You";
+
   return (
-    <Dropdown
-      label="Account menu"
-      trigger={<Avatar name={email ?? (cachedName || "You")} size={30} />}
-      items={[
-        {
-          id: "settings",
-          label: "Settings",
-          icon: <Settings aria-hidden="true" className="h-4 w-4" />,
-          onSelect: () => navigate("/settings"),
-        },
-        {
-          id: "conflicts",
-          label: conflicts.length > 0 ? `Conflicts (${conflicts.length})` : "Conflicts",
-          icon: <CircleAlert aria-hidden="true" className="h-4 w-4" />,
-          onSelect: () => navigate("/sync/conflicts"),
-        },
-        {
-          id: "logout",
-          label: "Sign out",
-          tone: "danger",
-          icon: <LogOut aria-hidden="true" className="h-4 w-4" />,
-          onSelect: () => {
-            void logout();
-            navigate("/login");
-          },
-        },
-      ]}
-    />
+    <div className="mt-auto border-t border-line/60 px-2 pt-3">
+      <div className="flex items-center gap-1">
+        <SyncIndicator compact />
+        <NavLink to="/notifications" aria-label="Notifications" className="icon-btn">
+          <Bell className="h-[18px] w-[18px]" />
+        </NavLink>
+        {conflicts.length > 0 && (
+          <NavLink
+            to="/sync/conflicts"
+            aria-label={`${conflicts.length} sync conflicts need attention`}
+            className="icon-btn text-expense"
+          >
+            <CircleAlert aria-hidden="true" className="h-[18px] w-[18px]" />
+          </NavLink>
+        )}
+        <div className="ml-auto">
+          <Dropdown
+            label="Account menu"
+            trigger={<Avatar name={name} size={34} />}
+            items={[
+              {
+                id: "settings",
+                label: "Settings",
+                icon: <Settings aria-hidden="true" className="h-4 w-4" />,
+                onSelect: () => navigate("/settings"),
+              },
+              {
+                id: "conflicts",
+                label: conflicts.length > 0 ? `Conflicts (${conflicts.length})` : "Conflicts",
+                icon: <CircleAlert aria-hidden="true" className="h-4 w-4" />,
+                onSelect: () => navigate("/sync/conflicts"),
+              },
+              {
+                id: "logout",
+                label: "Sign out",
+                tone: "danger",
+                icon: <LogOut aria-hidden="true" className="h-4 w-4" />,
+                onSelect: () => {
+                  void logout();
+                  navigate("/login");
+                },
+              },
+            ]}
+          />
+        </div>
+      </div>
+      <p className="mt-2 truncate px-1 text-[11px] text-muted">{email ?? name}</p>
+    </div>
   );
 }
 
-/** Desktop sidebar. Hidden below `lg`, where the bottom bar takes over. */
 function Sidebar() {
   return (
-    // Sticky + viewport height: the nav stays anchored under the page header
-    // instead of scrolling away with the content, and only the link list
-    // scrolls — and only when it is taller than the screen.
-    <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:self-start">
-      <div className="flex h-14 shrink-0 items-center border-b border-line px-4">
-        <Brand />
+    <aside
+      aria-label="Main"
+      className="trove-sidebar fixed bottom-[14px] left-[14px] top-[14px] z-30 hidden w-[220px] flex-col px-4 py-4 lg:flex xl:w-[240px] dark:bottom-6 dark:left-6 dark:top-6"
+    >
+      <Brand />
+      <BalanceCard />
+      <div className="scroll-area -mx-1 mt-4 min-h-0 flex-1 overflow-y-auto px-1">
+        <ul className="space-y-[2px]">
+          {PRIMARY_SIDEBAR.map((item) => (
+            <SidebarLink key={item.to} item={item} />
+          ))}
+        </ul>
+        <SidebarSection title="Planning" />
+        <ul className="space-y-[3px]">
+          {PLANNING_NAV.map((item) => (
+            <SidebarLink key={item.to} item={item} />
+          ))}
+        </ul>
+        <SidebarSection title="Organise" />
+        <ul className="space-y-[3px]">
+          {ORGANISE_NAV.map((item) => (
+            <SidebarLink key={item.to} item={item} />
+          ))}
+          <SidebarLink item={SETTINGS_ITEM} />
+        </ul>
       </div>
-      <SidebarBody />
+      <SidebarFooter />
     </aside>
   );
 }
 
-function BottomNav({ onQuickAdd }: { onQuickAdd: () => void }) {
-  const { pathname } = useLocation();
-  // Four highest-frequency destinations either side of the central quick-add;
-  // everything else lives in the drawer, reachable with one tap on `Menu`.
-  const items = PRIMARY_NAV.filter((item) => item.primary).slice(0, 4);
+/** Sidebar's first group has no heading. */
+const PRIMARY_SIDEBAR: NavItem[] = [
+  { to: "/overview", label: "Overview", icon: LayoutGrid },
+  { to: "/transactions", label: "Transactions", icon: ArrowLeftRight, matchNested: true },
+  { to: "/accounts", label: "Accounts", icon: Wallet, matchNested: true },
+  { to: "/budgets", label: "Budget", icon: PiggyBank, matchNested: true },
+  { to: "/statistics", label: "Statistics", icon: LayoutGrid },
+];
+
+/* --------------------------------------------------------------- mobile nav */
+
+const MOBILE_ITEMS: { key: string; label: string; icon: LucideIcon; to?: string }[] = [
+  { key: "home", label: "Home", icon: House, to: "/overview" },
+  { key: "activity", label: "Activity", icon: ArrowLeftRight, to: "/transactions" },
+  { key: "budget", label: "Budget", icon: PiggyBank, to: "/budgets" },
+  { key: "goals", label: "Goals", icon: Target, to: "/goals" },
+  { key: "more", label: "More", icon: Ellipsis },
+];
+
+function mobileActiveKey(pathname: string): string {
+  if (pathname === "/overview") return "home";
+  if (pathname.startsWith("/transactions")) return "activity";
+  if (pathname.startsWith("/budgets")) return "budget";
+  if (pathname.startsWith("/goals")) return "goals";
+  return "more";
+}
+
+function MobileBottomNav({
+  pathname,
+  onMore,
+  moreOpen,
+}: {
+  pathname: string;
+  onMore: () => void;
+  moreOpen: boolean;
+}) {
+  const activeKey = mobileActiveKey(pathname);
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden"
-      style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+      className="fixed inset-x-[14px] bottom-[calc(20px+env(safe-area-inset-bottom,0px))] z-40 lg:hidden"
     >
-      <div className="glass mx-auto grid max-w-lg grid-cols-5 items-stretch rounded-2xl">
-        {items.slice(0, 2).map((item) => (
-          <BottomLink key={item.to} item={item} active={isActive(item, pathname)} />
-        ))}
-        <div className="flex items-center justify-center">
-          <button
-            type="button"
-            onClick={onQuickAdd}
-            aria-label="Add transaction"
-            className="-mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-contrast shadow-raised transition-transform duration-150 ease-smooth active:scale-95"
-          >
-            <Plus aria-hidden="true" className="h-7 w-7" />
-          </button>
-        </div>
-        {items.slice(2, 4).map((item) => (
-          <BottomLink key={item.to} item={item} active={isActive(item, pathname)} />
-        ))}
+      <div className="glass grid h-[70px] grid-cols-5 items-center rounded-full px-2">
+        {MOBILE_ITEMS.map((item) => {
+          const active = item.key === activeKey || (item.key === "more" && moreOpen);
+          const Icon = item.icon;
+          const body = (
+            <>
+              <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={2} />
+              <span className="text-[11px] font-semibold leading-none">{item.label}</span>
+            </>
+          );
+          const className = `flex h-[54px] flex-col items-center justify-center gap-1.5 rounded-full transition-colors ${
+            active
+              ? "bg-primary text-primary-contrast shadow-pill"
+              : "text-muted hover:text-ink"
+          }`;
+          if (item.to) {
+            return (
+              <NavLink
+                key={item.key}
+                to={item.to}
+                aria-current={active ? "page" : undefined}
+                className={className}
+              >
+                {body}
+              </NavLink>
+            );
+          }
+          return (
+            <button
+              key={item.key}
+              type="button"
+              aria-expanded={moreOpen}
+              aria-controls="more-sheet"
+              onClick={onMore}
+              className={className}
+            >
+              {body}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
 }
 
-function BottomLink({ item, active }: { item: NavItem; active: boolean }) {
-  const Icon = item.icon;
-  return (
-    <NavLink
-      to={item.to}
-      end={!item.matchNested}
-      aria-current={active ? "page" : undefined}
-      className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-colors ${
-        active ? "text-primary" : "text-muted hover:text-ink"
-      }`}
-    >
-      <Icon aria-hidden="true" className="h-5 w-5" />
-      <span className="max-w-full truncate">{item.label}</span>
-    </NavLink>
-  );
-}
+const MORE_GROUPS: { title: string; items: NavItem[] }[] = [
+  {
+    title: "Main",
+    items: [
+      { to: "/accounts", label: "Accounts", icon: Wallet, matchNested: true },
+      { to: "/statistics", label: "Statistics", icon: LayoutGrid },
+    ],
+  },
+  {
+    title: "Planning",
+    items: [
+      { to: "/debts", label: "Debts", icon: Landmark, matchNested: true },
+      { to: "/credit-cards", label: "Credit cards", icon: CreditCard, matchNested: true },
+      { to: "/recurring", label: "Recurring", icon: Repeat, matchNested: true },
+      { to: "/installments", label: "Installments", icon: CalendarClock, matchNested: true },
+      { to: "/calendar", label: "Calendar", icon: CalendarClock },
+    ],
+  },
+  {
+    title: "Organise",
+    items: [
+      { to: "/categories", label: "Categories", icon: LayoutGrid, matchNested: true },
+      { to: "/search", label: "Search", icon: LayoutGrid },
+      { to: "/bookmarks", label: "Bookmarks", icon: LayoutGrid },
+      { to: "/notifications", label: "Notifications", icon: Bell },
+      { to: "/sync/conflicts", label: "Sync conflicts", icon: CircleAlert },
+      SETTINGS_ITEM,
+    ],
+  },
+];
 
-function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
   }, [open, onClose]);
 
   if (!open) return null;
+
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
-      <div
-        className="absolute inset-0 animate-fade-in bg-overlay/40"
+    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More destinations">
+      <button
+        type="button"
+        aria-label="Close more sheet"
+        className="absolute inset-0 animate-fade-in bg-black/35 backdrop-blur-[2px]"
         onClick={onClose}
-        aria-hidden="true"
       />
-      <div className="absolute inset-y-0 left-0 flex w-72 animate-rise flex-col border-r border-line bg-surface shadow-overlay">
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
-          <Brand />
-          <IconButton label="Close menu" onClick={onClose}>
+      <div
+        id="more-sheet"
+        className="absolute inset-x-0 bottom-0 max-h-[82dvh] animate-slide-up overflow-y-auto rounded-t-[30px] border-t border-white/70 bg-surface px-5 pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-3 shadow-overlay dark:border-line"
+      >
+        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-line-strong" />
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-primary">More</h2>
+          <IconButton label="Close" onClick={onClose}>
             <X className="h-5 w-5" />
           </IconButton>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <SidebarBody onNavigate={onClose} />
-        </div>
+        {MORE_GROUPS.map((group) => (
+          <div key={group.title} className="mb-4 last:mb-0">
+            <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+              {group.title}
+            </p>
+            <ul className="trove-card overflow-hidden p-1">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      onClick={onClose}
+                      className="flex min-h-[50px] items-center gap-3 rounded-[16px] px-3 text-[15px] font-medium text-ink hover:bg-surface-sunken"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-sunken text-primary">
+                        <Icon aria-hidden="true" className="h-4 w-4" />
+                      </span>
+                      <span className="flex-1">{item.label}</span>
+                      <ChevronRight aria-hidden="true" className="h-4 w-4 text-muted" />
+                    </NavLink>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+
+/* -------------------------------------------------------------------- shell */
 
 export interface AppShellProps {
   children: ReactNode;
   onQuickAdd: () => void;
 }
 
-/**
- * Application shell: persistent sidebar on desktop, bottom navigation on mobile,
- * and a header that carries only contextual actions. Every screen renders inside
- * it so the chrome is defined once.
- */
 export function AppShell({ children, onQuickAdd }: AppShellProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const { pathname } = useLocation();
-  const { conflicts } = useSync();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
-    setDrawerOpen(false);
+    setMoreOpen(false);
   }, [pathname]);
 
   return (
-    <div className="flex min-h-dvh bg-canvas">
+    <div className="min-h-dvh bg-canvas">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-primary-contrast"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-contrast"
       >
         Skip to content
       </a>
+
       <Sidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-canvas px-3 sm:px-5">
-          <IconButton label="Open menu" className="lg:hidden" onClick={() => setDrawerOpen(true)}>
-            <Menu className="h-5 w-5" />
-          </IconButton>
-          <div className="flex items-center gap-2 lg:hidden">
-            <span
-              aria-hidden="true"
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-contrast"
-            >
-              <Sprout className="h-4 w-4" />
-            </span>
-            <span className="text-sm font-semibold tracking-tight text-ink">Trove</span>
-          </div>
-
-          <div className="ml-auto flex items-center gap-1">
-            {/* Desktop Add Transaction action: prominent primary button. */}
-            <button
-              type="button"
-              onClick={onQuickAdd}
-              aria-label="Add transaction"
-              className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast shadow-card hover:bg-primary-hover transition-colors"
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              Add transaction
-            </button>
-            <SyncIndicator />
-            <NavLink to="/notifications" aria-label="Notifications" className="icon-btn">
-              <Bell className="h-5 w-5" />
-            </NavLink>
-            {conflicts.length > 0 && (
-              <NavLink
-                to="/sync/conflicts"
-                aria-label={`${conflicts.length} sync conflicts need attention`}
-                className="icon-btn text-expense"
-              >
-                <CircleAlert aria-hidden="true" className="h-5 w-5" />
-              </NavLink>
-            )}
-            <div className="ml-1 hidden sm:block">
-              <UserMenu />
-            </div>
-          </div>
-        </header>
-
+      <div className="flex min-h-dvh min-w-0 flex-col lg:ml-[264px] xl:ml-[294px]">
         <main
           id="main"
-          className="min-w-0 flex-1 px-3 pt-4 sm:px-5 lg:px-6 lg:pb-8"
-          style={{ paddingBottom: "calc(6.5rem + env(safe-area-inset-bottom, 0px))" }}
+          className="trove-safe-bottom min-w-0 flex-1 px-[18px] pt-5 sm:px-6 lg:px-0 lg:pb-12 lg:pr-10 lg:pt-10"
         >
-          <div className="mx-auto w-full max-w-app">{children}</div>
+          <div className="mx-auto w-full max-w-[640px] lg:max-w-[1240px]">{children}</div>
         </main>
       </div>
 
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <BottomNav onQuickAdd={onQuickAdd} />
+      <button
+        type="button"
+        onClick={onQuickAdd}
+        aria-label="Add transaction"
+        className="fixed right-4 z-40 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-primary text-primary-contrast shadow-[0_10px_26px_rgba(41,71,55,0.32)] transition-transform active:scale-95 lg:hidden"
+        style={{ bottom: "calc(106px + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <Plus aria-hidden="true" className="h-6 w-6" strokeWidth={2.4} />
+      </button>
+
+      <MobileBottomNav pathname={pathname} moreOpen={moreOpen} onMore={() => setMoreOpen(true)} />
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
     </div>
   );
 }

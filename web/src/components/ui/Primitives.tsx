@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowDownRight, ArrowLeftRight, ArrowUpRight } from "lucide-react";
+import { tintForName } from "./Trove";
 
 /* ----------------------------------------------------------------------- surfaces */
 
@@ -16,29 +17,38 @@ export function Card({
   );
 }
 
+/**
+ * Card header following the spec: title left, muted summary right, hairline
+ * under the row. Feature pages can also render it outside the card on mobile.
+ */
 export function CardHeader({
   title,
   subtitle,
   action,
+  summary,
   icon,
   className = "",
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   action?: ReactNode;
+  summary?: ReactNode;
   icon?: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={`flex items-start justify-between gap-3 border-b border-line px-4 py-3 ${className}`}>
+    <div className={`flex items-center justify-between gap-4 border-b border-line/75 px-6 py-5 ${className}`}>
       <div className="flex min-w-0 items-center gap-2.5">
         {icon && <span className="text-primary">{icon}</span>}
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-ink">{title}</h3>
-          {subtitle && <p className="truncate text-xs text-muted">{subtitle}</p>}
+          <h3 className="truncate text-base font-semibold leading-6 tracking-[-0.01em] text-ink">{title}</h3>
+          {subtitle && <p className="truncate text-[13px] text-muted">{subtitle}</p>}
         </div>
       </div>
-      {action}
+      <div className="flex shrink-0 items-center gap-3">
+        {summary && <span className="tabular hidden text-[12px] text-muted sm:block">{summary}</span>}
+        {action}
+      </div>
     </div>
   );
 }
@@ -50,7 +60,6 @@ export function Stat({
   caption,
   tone = "default",
   emphasis = "normal",
-  icon,
   className = "",
 }: {
   label: ReactNode;
@@ -62,7 +71,7 @@ export function Stat({
   className?: string;
 }) {
   const toneClass = {
-    default: "text-ink",
+    default: "text-primary",
     income: "text-income",
     expense: "text-expense",
     transfer: "text-transfer",
@@ -71,15 +80,12 @@ export function Stat({
   }[tone];
 
   const valueSize =
-    emphasis === "hero" ? "text-display-lg" : emphasis === "large" ? "text-display-sm" : "text-title";
+    emphasis === "hero" ? "text-[42px] leading-none" : emphasis === "large" ? "text-[28px] leading-none" : "text-[20px] leading-tight";
 
   return (
-    <div className={`flex flex-col gap-0.5 ${className}`}>
-      <span className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted uppercase">
-        {icon}
-        {label}
-      </span>
-      <span className={`${valueSize} tabular truncate ${toneClass}`}>{value}</span>
+    <div className={`flex flex-col gap-1 ${className}`}>
+      <span className="text-[13px] text-muted">{label}</span>
+      <span className={`tabular font-bold tracking-[-0.03em] ${valueSize} ${toneClass}`}>{value}</span>
       {caption && <span className="text-xs text-muted">{caption}</span>}
     </div>
   );
@@ -93,7 +99,10 @@ export type BadgeTone =
   | "income"
   | "expense"
   | "warning"
-  | "info";
+  | "info"
+  | "paid"
+  | "next"
+  | "upcoming";
 
 export function Badge({
   children,
@@ -110,9 +119,12 @@ export function Badge({
     neutral: "badge-neutral",
     primary: "badge-primary",
     income: "badge-synced",
-    expense: "badge-failed",
-    warning: "badge-pending",
-    info: "bg-info-soft text-info",
+    expense: "badge-expense",
+    warning: "badge-next",
+    info: "badge-primary",
+    paid: "badge-paid",
+    next: "badge-next",
+    upcoming: "badge-upcoming",
   }[tone];
   return (
     <span className={`${cls} ${className}`}>
@@ -132,7 +144,6 @@ export function ProgressBar({
   showOverflow = true,
   className = "",
 }: {
-  /** 0-100+. Values above 100 are clamped for the bar but flagged. */
   value: number;
   tone?: "primary" | "income" | "expense" | "warning" | "info";
   size?: "xs" | "sm" | "md";
@@ -142,15 +153,15 @@ export function ProgressBar({
 }) {
   const clamped = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   const over = value > 100;
-  const height = { xs: "h-1", sm: "h-1.5", md: "h-2.5" }[size];
-  const fill = over
+  const height = { xs: "h-1.5", sm: "h-2", md: "h-2" }[size];
+  const fill = over && showOverflow
     ? "bg-expense"
     : {
-        primary: "bg-primary",
+        primary: "bg-progress",
         income: "bg-income",
         expense: "bg-expense",
         warning: "bg-warning",
-        info: "bg-info",
+        info: "bg-transfer",
       }[tone];
 
   return (
@@ -163,7 +174,7 @@ export function ProgressBar({
       className={`w-full overflow-hidden rounded-full bg-surface-sunken ${height} ${className}`}
     >
       <div
-        className={`h-full rounded-full transition-[width] duration-500 ease-smooth ${fill} ${showOverflow && over ? "" : ""}`}
+        className={`h-full rounded-full transition-[width] duration-500 ease-smooth ${fill}`}
         style={{ width: `${clamped}%` }}
       />
     </div>
@@ -177,15 +188,25 @@ export function Divider({ className = "", label }: { className?: string; label?:
     return (
       <div className={`flex items-center gap-3 ${className}`}>
         <span className="h-px flex-1 bg-line" />
-        <span className="text-xs font-medium tracking-wide text-muted uppercase">{label}</span>
+        <span className="text-[11px] font-semibold tracking-[0.12em] text-muted uppercase">{label}</span>
         <span className="h-px flex-1 bg-line" />
       </div>
     );
   }
-  return <hr className={`border-t border-line ${className}`} />;
+  return <hr className={`border-t border-line/75 ${className}`} />;
 }
 
-export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+export function Avatar({
+  name,
+  size = 38,
+  className = "",
+  tone,
+}: {
+  name: string;
+  size?: number;
+  className?: string;
+  tone?: string;
+}) {
   const initials = name
     .split(/[\s@._-]+/)
     .filter(Boolean)
@@ -195,8 +216,8 @@ export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   return (
     <span
       aria-hidden="true"
-      style={{ width: size, height: size, fontSize: size * 0.38 }}
-      className="flex shrink-0 items-center justify-center rounded-full bg-primary-soft-bg font-semibold text-primary"
+      style={{ width: size, height: size, fontSize: Math.max(11, size * 0.37) }}
+      className={`trove-avatar ${tone ?? tintForName(name)} ${className}`}
     >
       {initials || "?"}
     </span>
@@ -216,7 +237,7 @@ export function AmountDelta({
   size?: "sm" | "md" | "lg";
 }) {
   const Icon = type === "income" ? ArrowUpRight : type === "expense" ? ArrowDownRight : ArrowLeftRight;
-  const tone = type === "income" ? "text-income" : type === "expense" ? "text-expense" : "text-transfer";
+  const tone = type === "income" ? "text-income" : type === "expense" ? "text-ink" : "text-muted";
   const iconSize = { sm: "h-3.5 w-3.5", md: "h-4 w-4", lg: "h-5 w-5" }[size];
   const textSize = { sm: "text-sm", md: "text-base", lg: "text-title" }[size];
   return (
@@ -239,7 +260,7 @@ export function LinkButton({
   return (
     <Link
       to={to}
-      className={`inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline ${className}`}
+      className={`inline-flex items-center gap-1 text-[13px] font-semibold text-primary hover:underline ${className}`}
     >
       {children}
     </Link>

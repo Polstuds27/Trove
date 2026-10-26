@@ -106,13 +106,13 @@ export function formatMoney(
       if (Math.abs(value) >= size) {
         const scaled = value / size;
         const text = Math.abs(scaled) >= 100 ? scaled.toFixed(0) : scaled.toFixed(1);
-        const sign = scaled < 0 ? "-" : signed && value > 0 ? "+" : "";
+        const sign = scaled < 0 ? "−" : signed && value > 0 ? "+" : "";
         return `${sign}${showSymbol ? currencySymbol(code) : ""}${text}${suffix}`;
       }
     }
   }
 
-  const sign = value < 0 ? "-" : signed && value > 0 ? "+" : "";
+  const sign = value < 0 ? "−" : signed && value > 0 ? "+" : "";
   const body = groupDigits(Math.abs(value).toFixed(fractionDigits), fractionDigits);
   return `${sign}${showSymbol ? currencySymbol(code) : ""}${body}`;
 }

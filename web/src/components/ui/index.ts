@@ -42,6 +42,22 @@ export {
 } from "./Feedback";
 export { Mascot, type MascotPose } from "./Mascot";
 export {
+  GlassPanel,
+  SurfaceCard,
+  Pill,
+  PillLink,
+  Toggle,
+  StatCard,
+  SectionHeading,
+  ListRow,
+  Avatar as TroveAvatar,
+  StatusBadge,
+  DetailLine,
+  MascotPanel,
+  MascotSpot,
+  tintForName,
+} from "./Trove";
+export {
   AmountInput,
   Tabs,
   SegmentedControl,

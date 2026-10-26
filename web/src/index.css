@@ -5,17 +5,9 @@
 /*
  * Trove design tokens.
  *
- * Single source of truth: every colour lives here as an RGB triplet, is exposed
- * as a CSS variable, and is consumed by Tailwind through `tailwind.config.cjs`.
- * Keeping the values in CSS (rather than JS) means stylesheet compilation never
- * depends on the Tailwind config being reloaded - the config caches for the
- * lifetime of a Vite process.
- *
- * World: warm cream paper ground, forest actions, sage accents, sand warmth
- * (see .impeccable/surfaces/web-src.md direction contract). Light is the
- * default; `[data-theme="dark"]` overrides the semantic names only, so
- * components never branch on the theme. Dark is a warm night forest, not a
- * desaturated light theme.
+ * One token set, two themes. Light is warm cream paper with forest actions and
+ * sage accents; dark is the same design with near-black surfaces, deep-forest
+ * elevation and cream primary actions. Components never branch on the theme.
  */
 
 @layer base {
@@ -24,101 +16,149 @@
 
     /* Brand ------------------------------------------------------------ */
     --color-primary: 41 71 55; /* #294737 forest */
-    --color-primary-hover: 34 59 46; /* darker forest */
-    --color-primary-soft: 210 218 197; /* sage-tinted soft fill */
-    --color-primary-contrast: 247 240 229; /* cream on forest */
-    --color-accent: 122 138 106; /* sage, darkened for AA text use */
-    --color-sage: 155 167 138; /* #9BA78A brand sage */
-    --color-forest: 41 71 55; /* #294737 brand forest */
-    --color-sand: 223 197 173; /* #DFC5AD brand sand */
+    --color-primary-hover: 33 58 45;
+    --color-primary-soft: 210 218 197;
+    --color-primary-soft-bg: 226 233 220; /* sage-light */
+    --color-primary-contrast: 255 255 255;
+    --color-accent: 110 139 90; /* moss, darkened for text */
+    --color-sage: 155 167 138; /* #9BA78A */
+    --color-sage-light: 226 233 220; /* #E2E9DC */
+    --color-forest: 41 71 55;
+    --color-sand: 223 197 173; /* #DFC5AD */
+    --color-peach: 242 221 208;
+    --color-peach-deep: 248 230 218;
+    --color-moss: 110 139 90;
+    --color-clay: 201 160 128;
+    --color-terracotta: 181 88 47;
+    --color-amber: 194 132 54;
+    --color-cream: 244 238 223;
+    --color-progress: 41 71 55;
+    --color-chart-1: 41 71 55;
+    --color-chart-2: 155 167 138;
+    --color-chart-3: 224 197 173;
+    --color-chart-4: 217 211 201;
+    --color-chart-5: 110 139 90;
+    --color-chart-6: 201 160 128;
 
     /* Surfaces & text --------------------------------------------------- */
-    --color-canvas: 247 240 229; /* #F7F0E5 cream */
-    --color-surface: 255 253 250;
+    --color-canvas: 247 240 229; /* #F7F0E5 */
+    --color-surface: 253 251 246; /* #FDFBF6 */
     --color-surface-raised: 255 255 255;
-    --color-surface-sunken: 240 233 220; /* sunken cream */
-    --color-ink: 27 42 34; /* #1B2A22 */
-    --color-ink-soft: 49 64 55;
-    --color-muted: 107 122 110; /* #6B7A6E */
-    --color-faint: 138 150 139; /* placeholder-level, still AA-ish on cream */
-    --color-line: 217 211 201; /* #D9D3C9 warm gray */
-    --color-line-strong: 194 187 174;
+    --color-surface-sunken: 233 227 216; /* #E9E3D8 track */
+    --color-ink: 31 36 32; /* #1F2420 near-black */
+    --color-ink-soft: 62 74 65;
+    --color-muted: 107 111 102; /* #6B6F66 */
+    --color-faint: 141 146 138;
+    --color-line: 217 211 201; /* warm gray */
+    --color-line-strong: 199 192 180;
+    --color-hairline: 217 211 201;
 
     /* Financial semantics ----------------------------------------------- */
-    --color-income: 31 110 66; /* deep green, AA on cream */
-    --color-expense: 185 55 45; /* warm red, AA on cream */
-    --color-transfer: 63 96 138; /* muted warm blue */
-    --color-warning: 160 95 16; /* warm amber */
-    --color-info: 63 96 138;
+    --color-income: 47 122 80;
+    --color-expense: 181 88 47; /* terracotta */
+    --color-transfer: 69 104 142;
+    --color-warning: 169 104 28;
+    --color-info: 69 104 142;
 
-    /* Tinted backgrounds for the semantics above */
-    --color-income-soft: 224 236 226;
-    --color-expense-soft: 245 225 220;
-    --color-transfer-soft: 224 231 239;
-    --color-warning-soft: 244 231 213;
-    --color-info-soft: 224 231 239;
-    --color-primary-soft-bg: 231 234 220;
+    --color-income-soft: 226 233 220;
+    --color-expense-soft: 248 230 218;
+    --color-transfer-soft: 228 234 240;
+    --color-warning-soft: 246 232 210;
+    --color-info-soft: 228 234 240;
 
     /* Effects ----------------------------------------------------------- */
-    --shadow-card: 0 1px 2px rgb(41 71 55 / 0.05), 0 2px 6px rgb(41 71 55 / 0.05);
-    --shadow-raised: 0 4px 14px rgb(41 71 55 / 0.12);
-    --shadow-overlay: 0 20px 45px rgb(27 42 34 / 0.22);
-    --ring-focus: 89 105 79; /* deepened sage: visible against cream and white */
+    --shadow-card: 0 1px 2px rgb(41 71 55 / 0.04), 0 8px 24px rgb(41 71 55 / 0.06);
+    --shadow-raised: 0 10px 30px rgb(41 71 55 / 0.1);
+    --shadow-pill: 0 8px 18px rgb(41 71 55 / 0.2);
+    --shadow-overlay: 0 24px 60px rgb(27 42 34 / 0.22);
+    --shadow-soft: 0 18px 44px rgb(41 71 55 / 0.11);
+    --ring-focus: 89 105 79;
 
-    /* Glass (restrained: floating nav, quick sheet, balance tile only).
-       Opaque fallback for no-backdrop-filter browsers is in @supports below. */
+    /* Glass and heroes -------------------------------------------------- */
     --glass-bg: 255 253 250 / 0.72;
-    --glass-border: 255 255 255 / 0.65;
+    --glass-border: 255 255 255 / 0.72;
     --glass-blur: 16px;
-
-    /* Elevation scale (used by class utilities) */
+    --glass-gradient: linear-gradient(135deg, rgb(255 255 255 / 0.86) 0%, rgb(240 243 232 / 0.72) 52%, rgb(226 233 220 / 0.64) 100%);
+    --glass-peach-gradient: linear-gradient(135deg, rgb(255 253 248 / 0.9) 0%, rgb(248 238 224 / 0.8) 55%, rgb(242 221 208 / 0.7) 100%);
+    --sidebar-gradient: linear-gradient(160deg, rgb(255 253 248 / 0.9) 0%, rgb(250 246 237 / 0.84) 55%, rgb(235 239 226 / 0.76) 100%);
+    --hero-bg: transparent;
+    --hero-border: rgb(255 255 255 / 0.75);
+    --page-gradient:
+      radial-gradient(circle at 84% -4%, rgb(228 225 211 / 0.9) 0%, rgb(228 225 211 / 0) 42%),
+      linear-gradient(118deg, #f7f0e5 0%, #f7f0e5 48%, #eff0e4 100%);
     --color-overlay: 27 42 34;
   }
 
   [data-theme="dark"] {
     color-scheme: dark;
 
-    --color-primary: 140 164 143; /* light forest for dark surfaces */
-    --color-primary-hover: 160 183 162;
-    --color-primary-soft: 47 64 51;
-    --color-primary-contrast: 17 26 20; /* dark text on light forest */
-    --color-accent: 155 167 138; /* #9BA78A sage */
-    --color-sage: 155 167 138;
-    --color-forest: 140 164 143;
+    --color-primary: 239 231 214; /* cream */
+    --color-primary-hover: 247 240 229;
+    --color-primary-soft: 42 58 47;
+    --color-primary-soft-bg: 42 58 47;
+    --color-primary-contrast: 31 36 32;
+    --color-accent: 155 181 135;
+    --color-sage: 155 181 135;
+    --color-sage-light: 34 49 39;
+    --color-forest: 244 238 223;
     --color-sand: 176 152 130;
+    --color-peach: 64 44 34;
+    --color-peach-deep: 74 52 39;
+    --color-moss: 126 158 108;
+    --color-clay: 227 154 116;
+    --color-terracotta: 227 154 116;
+    --color-amber: 227 179 92;
+    --color-cream: 244 238 223;
+    --color-progress: 155 167 138;
+    --color-chart-1: 244 238 223;
+    --color-chart-2: 155 181 135;
+    --color-chart-3: 176 152 130;
+    --color-chart-4: 126 133 124;
+    --color-chart-5: 126 158 108;
+    --color-chart-6: 227 154 116;
 
-    --color-canvas: 19 28 22; /* #131C16 warm night forest */
-    --color-surface: 26 37 30;
-    --color-surface-raised: 34 47 38;
-    --color-surface-sunken: 15 23 18;
-    --color-ink: 240 234 223; /* cream ink */
-    --color-ink-soft: 214 208 196;
-    --color-muted: 156 167 153;
-    --color-faint: 124 135 122;
-    --color-line: 44 58 48;
-    --color-line-strong: 60 76 65;
+    --color-canvas: 13 14 13; /* #0D0E0D */
+    --color-surface: 20 24 21; /* #141815 */
+    --color-surface-raised: 22 26 23; /* #161A17 */
+    --color-surface-sunken: 31 38 34; /* #1F2622 */
+    --color-ink: 244 238 223; /* cream */
+    --color-ink-soft: 217 212 198;
+    --color-muted: 169 173 163; /* #A9ADA3 */
+    --color-faint: 126 133 124;
+    --color-line: 34 43 37; /* #222B25 */
+    --color-line-strong: 42 51 45;
+    --color-hairline: 34 43 37;
 
-    --color-income: 94 191 133;
-    --color-expense: 240 124 110;
-    --color-transfer: 133 164 205;
-    --color-warning: 231 174 74;
-    --color-info: 133 164 205;
+    --color-income: 155 181 135; /* sage-green */
+    --color-expense: 227 154 116; /* lightened terracotta */
+    --color-transfer: 155 181 170;
+    --color-warning: 227 179 92; /* amber */
+    --color-info: 155 181 170;
 
-    --color-income-soft: 30 58 42;
-    --color-expense-soft: 74 37 31;
-    --color-transfer-soft: 31 47 64;
-    --color-warning-soft: 66 51 24;
-    --color-info-soft: 31 47 64;
-    --color-primary-soft-bg: 32 45 36;
+    --color-income-soft: 38 56 44;
+    --color-expense-soft: 58 38 29;
+    --color-transfer-soft: 33 47 45;
+    --color-warning-soft: 60 47 25;
+    --color-info-soft: 33 47 45;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.3);
-    --shadow-raised: 0 6px 18px rgb(0 0 0 / 0.5);
-    --shadow-overlay: 0 24px 50px rgb(0 0 0 / 0.65);
-    --ring-focus: 155 167 138; /* sage reads clearly on night forest */
+    --shadow-card: 0 1px 0 rgb(255 255 255 / 0.02), 0 12px 28px rgb(0 0 0 / 0.24);
+    --shadow-raised: 0 14px 38px rgb(0 0 0 / 0.38);
+    --shadow-pill: 0 10px 24px rgb(0 0 0 / 0.42);
+    --shadow-overlay: 0 28px 60px rgb(0 0 0 / 0.68);
+    --shadow-soft: 0 20px 50px rgb(0 0 0 / 0.3);
+    --ring-focus: 155 181 135;
 
-    --glass-bg: 30 42 34 / 0.72;
-    --glass-border: 155 167 138 / 0.22;
-    --glass-blur: 16px;
+    --glass-bg: 20 24 21 / 0.8;
+    --glass-border: 255 255 255 / 0.08;
+    --glass-gradient: linear-gradient(135deg, rgb(31 47 38 / 0.92) 0%, rgb(24 33 27 / 0.9) 56%, rgb(20 24 21 / 0.9) 100%);
+    --glass-peach-gradient: linear-gradient(135deg, rgb(58 42 32 / 0.92) 0%, rgb(38 31 25 / 0.92) 100%);
+    --sidebar-gradient: linear-gradient(170deg, #161b18 0%, #141815 55%, #121512 100%);
+    --hero-bg: #1f2f26;
+    --hero-border: #2d4136;
+    --page-gradient:
+      radial-gradient(circle at 86% -8%, rgb(31 47 38 / 0.5) 0%, rgb(31 47 38 / 0) 46%),
+      linear-gradient(125deg, #0d0e0d 0%, #0d0e0d 55%, #101310 100%);
+    --color-overlay: 0 0 0;
   }
 
   * {
@@ -127,17 +167,24 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
   }
 
   body {
     background-color: rgb(var(--color-canvas));
+    background-image: var(--page-gradient);
+    background-attachment: fixed;
     color: rgb(var(--color-ink));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: "cv02", "cv03", "cv04", "tnum" 0;
+    font-feature-settings: "cv02", "cv03", "cv04";
   }
 
-  /* Browser surfaces belong to the design: selection, caret, scrollbars. */
+  .tabular,
+  [data-numeric="true"] {
+    font-variant-numeric: tabular-nums;
+  }
+
   ::selection {
     background-color: rgb(var(--color-primary) / 0.22);
     color: rgb(var(--color-ink));
@@ -159,20 +206,10 @@
     background-clip: content-box;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(var(--color-muted) / 0.8);
-  }
-
-  /* Financial figures should always be tabular so columns line up. */
-  .tabular,
-  [data-numeric="true"] {
-    font-variant-numeric: tabular-nums;
-  }
-
   :focus-visible {
     outline: 2px solid rgb(var(--ring-focus));
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -188,46 +225,177 @@
 }
 
 @layer components {
-  /* ---------------------------------------------------------------- surfaces */
+  /* ------------------------------------------------------------ typography */
+  .trove-page-title {
+    @apply text-[32px] font-semibold leading-[38px] tracking-[-0.025em];
+    color: rgb(var(--color-primary));
+  }
+
+  .trove-mobile-title {
+    @apply text-[29px] font-semibold leading-[34px] tracking-[-0.025em];
+    color: rgb(var(--color-primary));
+  }
+
+  .trove-subtitle {
+    @apply text-[13px] leading-5;
+    color: rgb(var(--color-muted));
+  }
+
+  .trove-hero-amount {
+    @apply font-bold tabular tracking-[-0.035em];
+    font-size: clamp(2.75rem, 3.4vw, 4rem);
+    line-height: 1.02;
+    color: rgb(var(--color-primary));
+  }
+
+  .trove-amount-lg {
+    @apply text-[40px] font-bold leading-none tracking-[-0.03em] tabular;
+    color: rgb(var(--color-primary));
+  }
+
+  .trove-amount-md {
+    @apply text-[28px] font-bold leading-none tracking-[-0.025em] tabular;
+    color: rgb(var(--color-primary));
+  }
+
+  .trove-row-title {
+    @apply text-[15px] font-semibold leading-5;
+    color: rgb(var(--color-ink));
+  }
+
+  .trove-row-sub {
+    @apply text-[13px] leading-[18px];
+    color: rgb(var(--color-muted));
+  }
+
+  .trove-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em];
+    color: rgb(var(--color-muted));
+  }
+
+  .trove-section-title {
+    @apply text-base font-semibold leading-6 tracking-[-0.01em];
+    color: rgb(var(--color-ink));
+  }
+
+  /* --------------------------------------------------------------- surfaces */
+  .trove-card {
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-line) / 0.55);
+    border-radius: 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .trove-card-lg {
+    @apply trove-card;
+    border-radius: 28px;
+  }
+
   .card {
-    @apply rounded-xl border bg-surface;
-    border-color: rgb(var(--color-line));
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-line) / 0.55);
+    border-radius: 24px;
     box-shadow: var(--shadow-card);
   }
 
   .card-flat {
-    @apply rounded-xl border bg-surface;
-    border-color: rgb(var(--color-line));
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-line) / 0.55);
+    border-radius: 24px;
   }
 
   .card-inset {
-    @apply rounded-lg bg-surface-sunken;
+    @apply rounded-[18px];
+    background-color: rgb(var(--color-surface-sunken));
+  }
+
+  .trove-glass {
+    background: var(--glass-gradient);
+    border: 1px solid var(--hero-border);
+    border-radius: 28px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .trove-glass-peach {
+    background: var(--glass-peach-gradient);
+    border: 1px solid rgb(255 255 255 / 0.62);
+    border-radius: 28px;
+    box-shadow: var(--shadow-card);
+  }
+
+  [data-theme="dark"] .trove-glass-peach {
+    border-color: rgb(255 255 255 / 0.07);
+  }
+
+  .trove-hero {
+    background-color: var(--hero-bg, transparent);
+    border: 1px solid var(--hero-border);
+    border-radius: 28px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass {
+    background-color: rgb(var(--glass-bg));
+    border: 1px solid rgb(var(--glass-border));
+    box-shadow: var(--shadow-raised);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  }
+
+  .trove-sidebar {
+    background: var(--sidebar-gradient);
+    border: 1px solid rgb(255 255 255 / 0.7);
+    border-radius: 32px;
+    box-shadow: 0 18px 44px rgb(41 71 55 / 0.12);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    backdrop-filter: blur(18px) saturate(1.2);
+  }
+
+  [data-theme="dark"] .trove-sidebar {
+    background: #141815;
+    border-color: #222b25;
+    border-radius: 24px;
+    box-shadow: 0 22px 50px rgb(0 0 0 / 0.4);
   }
 
   .hairline {
     border-color: rgb(var(--color-line));
   }
 
-  /* ------------------------------------------------------------------ inputs */
-  .input {
-    @apply w-full rounded-lg border px-3 py-2 text-sm transition-colors;
-    background-color: rgb(var(--color-surface));
-    color: rgb(var(--color-ink));
-    border-color: rgb(var(--color-line-strong));
+  .trove-divider {
+    border-top: 1px solid rgb(var(--color-line) / 0.75);
   }
 
-  .input::placeholder {
+  /* ------------------------------------------------------------------ inputs */
+  .input,
+  .trove-input {
+    @apply w-full rounded-[16px] border px-3.5 py-2.5 text-sm transition-colors;
+    height: 46px;
+    background-color: rgb(var(--color-surface-raised));
+    color: rgb(var(--color-ink));
+    border-color: rgb(var(--color-sand) / 0.85);
+  }
+
+  textarea.input {
+    height: auto;
+    min-height: 88px;
+  }
+
+  .input::placeholder,
+  .trove-input::placeholder {
     color: rgb(var(--color-faint));
   }
 
-  .input:hover:not(:disabled) {
-    border-color: rgb(var(--color-primary) / 0.5);
+  .input:hover:not(:disabled),
+  .trove-input:hover:not(:disabled) {
+    border-color: rgb(var(--color-sand));
   }
 
-  .input:focus {
-    outline: 2px solid rgb(var(--color-ring-focus, var(--ring-focus)));
+  .input:focus,
+  .trove-input:focus {
+    outline: 2px solid rgb(var(--ring-focus) / 0.5);
     outline-offset: 1px;
-    border-color: rgb(var(--color-primary));
+    border-color: rgb(var(--color-primary) / 0.55);
   }
 
   .input:disabled {
@@ -236,55 +404,91 @@
   }
 
   .input-error {
-    border-color: rgb(var(--color-expense));
+    border-color: rgb(var(--color-expense)) !important;
+    background-color: rgb(var(--color-expense) / 0.08);
+  }
+
+  [data-theme="dark"] .input,
+  [data-theme="dark"] .trove-input {
+    background-color: #161a17;
+    border-color: #2a332d;
+  }
+
+  [data-theme="dark"] .input-error {
+    background-color: rgb(var(--color-expense) / 0.1);
   }
 
   .label {
-    @apply text-xs font-medium tracking-wide text-muted uppercase;
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em];
+    color: rgb(var(--color-muted));
   }
 
   .field-hint {
-    @apply text-xs text-muted;
+    @apply text-xs;
+    color: rgb(var(--color-muted));
   }
 
   .field-error {
-    @apply text-xs text-expense;
+    @apply text-xs;
+    color: rgb(var(--color-expense));
+  }
+
+  select.input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6F66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 16px;
   }
 
   /* ----------------------------------------------------------------- buttons */
-  .btn {
-    @apply inline-flex cursor-pointer select-none items-center justify-center gap-2
-      rounded-lg px-4 py-2 text-sm font-medium transition-colors
-      disabled:cursor-not-allowed disabled:opacity-50;
+  .btn,
+  .trove-btn {
+    @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap text-[13px] font-semibold transition-all;
+    min-height: 39px;
+    border-radius: 14px;
+    padding: 0.55rem 1rem;
+  }
+
+  .btn:disabled,
+  .trove-btn:disabled {
+    @apply cursor-not-allowed opacity-50;
   }
 
   .btn-sm {
-    @apply px-3 py-1.5 text-xs;
+    min-height: 33px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-size: 12px;
   }
 
-  .btn-primary {
-    @apply btn text-white;
+  .btn-primary,
+  .trove-btn-primary {
+    @apply btn;
     background-color: rgb(var(--color-primary));
     color: rgb(var(--color-primary-contrast));
+    box-shadow: var(--shadow-pill);
   }
 
-  .btn-primary:hover:not(:disabled) {
+  .btn-primary:hover:not(:disabled),
+  .trove-btn-primary:hover:not(:disabled) {
     background-color: rgb(var(--color-primary-hover));
   }
 
-  .btn-secondary {
-    @apply btn border;
-    background-color: rgb(var(--color-surface));
+  .btn-secondary,
+  .trove-btn-secondary {
+    @apply btn;
+    background-color: rgb(var(--color-surface-sunken));
     color: rgb(var(--color-ink));
-    border-color: rgb(var(--color-line-strong));
   }
 
-  .btn-secondary:hover:not(:disabled) {
-    background-color: rgb(var(--color-surface-sunken));
+  .btn-secondary:hover:not(:disabled),
+  .trove-btn-secondary:hover:not(:disabled) {
+    background-color: rgb(var(--color-line));
   }
 
   .btn-ghost {
     @apply btn;
+    background: transparent;
     color: rgb(var(--color-muted));
   }
 
@@ -293,15 +497,15 @@
     color: rgb(var(--color-ink));
   }
 
-  .btn-danger {
-    @apply btn border;
-    background-color: rgb(var(--color-surface));
+  .btn-danger,
+  .trove-btn-danger {
+    @apply btn;
+    background-color: rgb(var(--color-surface-sunken));
     color: rgb(var(--color-expense));
-    border-color: rgb(var(--color-expense) / 0.4);
   }
 
   .btn-danger:hover:not(:disabled) {
-    background-color: rgb(var(--color-expense) / 0.1);
+    background-color: rgb(var(--color-expense-soft));
   }
 
   .btn-income {
@@ -316,10 +520,8 @@
     color: #fff;
   }
 
-  /* Square tap target for icon-only controls (44px on touch). */
   .icon-btn {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-lg
-      transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center rounded-[12px] transition-colors disabled:cursor-not-allowed disabled:opacity-50;
     @apply h-9 w-9 shrink-0;
     color: rgb(var(--color-muted));
   }
@@ -335,7 +537,7 @@
 
   /* ------------------------------------------------------------------ badges */
   .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none;
   }
 
   .badge-neutral {
@@ -350,56 +552,103 @@
     color: rgb(var(--color-primary));
   }
 
-  .badge-synced {
+  .badge-synced,
+  .badge-paid {
     @apply badge;
     background-color: rgb(var(--color-income-soft));
     color: rgb(var(--color-income));
   }
 
-  .badge-pending {
+  .badge-pending,
+  .badge-next {
     @apply badge;
-    background-color: rgb(var(--color-warning-soft));
-    color: rgb(var(--color-warning));
+    background-color: rgb(var(--color-peach));
+    color: rgb(var(--color-terracotta));
   }
 
   .badge-failed,
-  .badge-conflict {
+  .badge-conflict,
+  .badge-expense {
     @apply badge;
     background-color: rgb(var(--color-expense-soft));
     color: rgb(var(--color-expense));
   }
 
-  .badge-idle {
+  .badge-idle,
+  .badge-upcoming {
     @apply badge;
     background-color: rgb(var(--color-surface-sunken));
     color: rgb(var(--color-muted));
   }
 
-  /* -------------------------------------------------------------- navigation */
-  .nav-link {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors;
-    color: rgb(var(--color-muted));
-  }
-
-  .nav-link:hover {
+  /* ------------------------------------------------------------------- pills */
+  .trove-pill {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors;
+    min-height: 34px;
     background-color: rgb(var(--color-surface-sunken));
     color: rgb(var(--color-ink));
   }
 
-  .nav-link-active {
-    background-color: rgb(var(--color-primary));
-    color: rgb(var(--color-primary-contrast));
-    box-shadow: var(--shadow-card);
+  .trove-pill:hover {
+    background-color: rgb(var(--color-line));
   }
 
-  .nav-link-active:hover {
-    background-color: rgb(var(--color-primary-hover));
+  .trove-pill-active {
+    background-color: rgb(var(--color-primary));
     color: rgb(var(--color-primary-contrast));
+    box-shadow: var(--shadow-pill);
+  }
+
+  .trove-pill-active:hover {
+    background-color: rgb(var(--color-primary));
+  }
+
+  /* --------------------------------------------------------------- navigation */
+  .trove-nav-item {
+    @apply flex items-center gap-3 rounded-[16px] text-[14px] font-medium transition-colors;
+    min-height: 32px;
+    padding: 0.22rem 0.7rem;
+    color: rgb(var(--color-ink-soft));
+  }
+
+  .trove-nav-item:hover {
+    background-color: rgb(var(--color-surface-sunken) / 0.7);
+    color: rgb(var(--color-ink));
+  }
+
+  .trove-nav-active,
+  .trove-nav-active:hover {
+    background-color: rgb(var(--color-primary));
+    color: rgb(var(--color-primary-contrast));
+    box-shadow: var(--shadow-pill);
+  }
+
+  .nav-link {
+    @apply trove-nav-item;
+  }
+
+  .nav-link-active {
+    @apply trove-nav-active;
+  }
+
+  /* ------------------------------------------------------------------ rows */
+  .trove-row {
+    @apply flex items-center gap-3.5 px-5 py-3.5 transition-colors;
+    min-height: 64px;
+  }
+
+  .trove-row:hover {
+    background-color: rgb(var(--color-surface-sunken) / 0.45);
+  }
+
+  .trove-hairline-list > * + * {
+    border-top: 1px solid rgb(var(--color-line) / 0.75);
   }
 
   /* ------------------------------------------------------------------ tables */
   .th {
-    @apply px-3 py-2 text-left text-xs font-semibold tracking-wide text-muted uppercase;
+    @apply px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em];
+    color: rgb(var(--color-muted));
   }
 
   .td {
@@ -411,37 +660,13 @@
   }
 
   .row-link:hover {
-    background-color: rgb(var(--color-surface-sunken));
+    background-color: rgb(var(--color-surface-sunken) / 0.45);
   }
 
   /* --------------------------------------------------------------- skeletons */
   .skeleton {
-    @apply animate-pulse rounded-md;
+    @apply animate-pulse rounded-lg;
     background-color: rgb(var(--color-surface-sunken));
-  }
-
-  /* ------------------------------------------------------------------- glass
-     Restrained material: floating mobile nav, quick-action sheet, balance
-     tile only (direction contract). Never decorative blur on cards/tables. */
-  .glass {
-    background-color: rgb(var(--glass-bg));
-    border: 1px solid rgb(var(--glass-border));
-    box-shadow: var(--shadow-raised);
-  }
-
-  /* Opaque fallback where backdrop-filter is unsupported. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .glass {
-      background-color: rgb(var(--color-surface));
-      border-color: rgb(var(--color-line));
-    }
-  }
-
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .glass {
-      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-      backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-    }
   }
 
   /* ------------------------------------------------------------ scroll areas */
@@ -459,5 +684,39 @@
   .scroll-area::-webkit-scrollbar-thumb {
     background-color: rgb(var(--color-line-strong));
     border-radius: 999px;
+  }
+
+  /* ------------------------------------------------------------- misc pieces */
+  .trove-avatar {
+    @apply flex shrink-0 items-center justify-center rounded-full font-semibold;
+  }
+
+  .trove-progress {
+    @apply w-full overflow-hidden rounded-full;
+    height: 8px;
+    background-color: rgb(var(--color-surface-sunken));
+  }
+
+  .trove-progress > span {
+    @apply block h-full rounded-full transition-[width] duration-500;
+  }
+
+  .trove-safe-bottom {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 1024px) {
+    .trove-safe-bottom {
+      padding-bottom: 0;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
   }
 }

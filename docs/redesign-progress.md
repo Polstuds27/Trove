@@ -11,39 +11,39 @@ Branch: `redesign/spec`. Presentation only: no API, store, sync, auth or calcula
 - [ ] Playwright added and screenshot harness created
 
 ### 1. Tokens and shared components
-- [ ] Light token set (cream canvas, warm-white cards, forest text, sage/sand/clay charts, terracotta warning)
-- [ ] Dark token set (near-black canvas, #141815 surfaces, deep-forest hero, cream primary, sage fill)
+- [x] Light token set (cream canvas, warm-white cards, forest text, sage/sand/clay charts, terracotta warning)
+- [x] Dark token set (near-black canvas, #141815 surfaces, deep-forest hero, cream primary, sage fill)
 - [ ] Card (solid, 24–28 radius)
-- [ ] GlassPanel (diagonal gradient, 1px white border, blur 16)
-- [ ] Button: primary, secondary, destructive
-- [ ] Input, Select (16 radius, 46 high where appropriate)
-- [ ] Pill (filter, fully round)
-- [ ] Badge (Paid, Next, Upcoming, Expense)
-- [ ] Toggle
-- [ ] ProgressBar (8px, warning/over-limit states)
-- [ ] Avatar (38px, pastel tints)
-- [ ] ListRow
-- [ ] SectionHeading
-- [ ] StatCard
-- [ ] PageHeader
-- [ ] EmptyState
-- [ ] Skeleton
-- [ ] Mascot module (semantic names only, all sprites mapped)
+- [x] GlassPanel (diagonal gradient, 1px white border, blur 16)
+- [x] Button: primary, secondary, destructive
+- [x] Input, Select (16 radius, 46 high where appropriate)
+- [x] Pill (filter, fully round)
+- [x] Badge (Paid, Next, Upcoming, Expense)
+- [x] Toggle
+- [x] ProgressBar (8px, warning/over-limit states)
+- [x] Avatar (38px, pastel tints)
+- [x] ListRow
+- [x] SectionHeading
+- [x] StatCard
+- [x] PageHeader
+- [x] EmptyState
+- [x] Skeleton
+- [x] Mascot module (semantic names only, all sprites mapped)
 
 ### 2. Shell
-- [ ] Desktop floating glass sidebar, inset 14, width ~240, radius 32, logo + live balance card + 3 nav groups + active pill
-- [ ] Desktop header: title/subtitle left, one primary action right
-- [ ] Mobile page header: subtitle, 28–30 title, 42 avatar
-- [ ] Mobile floating glass bottom nav (70 high, 5 items, active mapping)
-- [ ] Mobile More sheet (all routes, three headings)
-- [ ] Floating add button (52, all in-app screens, opens Add transaction)
-- [ ] Breakpoint 1024; 1024–1279 sidebar ~220; mobile content max ~640 centered
-- [ ] Dark shell token swap only
+- [x] Desktop floating glass sidebar, inset 14, width ~240, radius 32, logo + live balance card + 3 nav groups + active pill
+- [x] Desktop header: title/subtitle left, one primary action right
+- [x] Mobile page header: subtitle, 28–30 title, 42 avatar
+- [x] Mobile floating glass bottom nav (70 high, 5 items, active mapping)
+- [x] Mobile More sheet (all routes, three headings)
+- [x] Floating add button (52, all in-app screens, opens Add transaction)
+- [x] Breakpoint 1024; 1024–1279 sidebar ~220; mobile content max ~640 centered
+- [x] Dark shell token swap only
 
 ### 3. Overview / Home
-- [ ] Desktop hero, 3 stat cards, budget + mascot panel, recent transactions
-- [ ] Mobile header, hero, insight, budget, compact stats, recent
-- [ ] Loading, empty, error, offline
+- [x] Desktop hero, 3 stat cards, budget + mascot panel, recent transactions
+- [x] Mobile header, hero, insight, budget, compact stats, recent
+- [x] Loading, empty, error, offline (global banner + boundary; empty/loading on page)
 
 ### 4. Transactions, Accounts, Budget, Statistics
 - [ ] Transactions desktop master-detail, search, pills, selected detail, mascot

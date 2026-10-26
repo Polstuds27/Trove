@@ -23,7 +23,6 @@ import {
   Card,
   EmptyState,
   IconButton,
-  Mascot,
   PageHeader,
   SearchInput,
   SegmentedControl,
