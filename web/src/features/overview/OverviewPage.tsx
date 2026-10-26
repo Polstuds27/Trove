@@ -7,18 +7,16 @@
  * decorative dashboards.
  */
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowDownRight,
   ArrowLeftRight,
   ArrowUpRight,
   CalendarDays,
   ChevronRight,
-  CreditCard,
   Landmark,
   Plus,
   Target,
-  Wallet,
 } from "lucide-react";
 import {
   BarChart,
@@ -27,7 +25,6 @@ import {
   CardHeader,
   ChartFrame,
   ChartLegend,
-  Divider,
   EmptyState,
   LinkButton,
   Mascot,
@@ -37,7 +34,7 @@ import {
 } from "../../components/ui";
 import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import { byTxNewest, formatMoney, formatMonth, formatPercent } from "../../design/format";
-import { ACCOUNT_TYPE_LABELS, accountIcon, categoryIcon } from "../../design/icons";
+import { categoryIcon } from "../../design/icons";
 import { useLocalData } from "../analytics/useLocalData";
 import { usePreferences } from "../settings/preferences";
 import {
@@ -64,7 +61,7 @@ export function OverviewPage() {
   const { lookups, dataset, ready } = useLocalData();
   const { preferences } = usePreferences();
   const navigate = useNavigate();
-  const [anchor, setAnchor] = useState(() => new Date());
+  const [anchor] = useState(() => new Date());
   const currency = dataset.baseCurrency;
 
   const period: Period = useMemo(
@@ -115,23 +112,10 @@ export function OverviewPage() {
     [dataset.transactions, range],
   );
 
-  const accounts = useMemo(
-    () => dataset.accounts.filter((a) => !a.archived),
-    [dataset.accounts],
-  );
-  const creditCards = useMemo(
-    () => accounts.filter((a) => a.type === "credit" || a.type === "debit"),
-    [accounts],
-  );
-  const cashAccounts = useMemo(
-    () => accounts.filter((a) => a.type !== "credit" && a.type !== "loan"),
-    [accounts],
-  );
-
   const expenseDelta = previous.expense > 0 ? ((month.expense - previous.expense) / previous.expense) * 100 : null;
   const incomeDelta = previous.income > 0 ? ((month.income - previous.income) / previous.income) * 100 : null;
 
-  if (ready && accounts.length === 0) {
+  if (ready && dataset.accounts.length === 0) {
     return (
       <>
         <PageHeader title="Overview" subtitle="Your financial home" className="mb-2" />
@@ -201,7 +185,7 @@ export function OverviewPage() {
             </span>
           </div>
           {incomeDelta !== null && (
-            <p className="mt-1 text-xs {incomeDelta >= 0 ? "text-income" : "text-expense"}">
+            <p className={`mt-1 text-xs ${incomeDelta >= 0 ? "text-income" : "text-expense"}`}>
               {incomeDelta >= 0 ? "↑" : "↓"} {formatPercent(Math.abs(incomeDelta))} vs last month
             </p>
           )}
@@ -219,7 +203,7 @@ export function OverviewPage() {
             </span>
           </div>
           {expenseDelta !== null && (
-            <p className="mt-1 text-xs {expenseDelta >= 0 ? "text-expense" : "text-income"}">
+            <p className={`mt-1 text-xs ${expenseDelta >= 0 ? "text-expense" : "text-income"}`}>
               {expenseDelta >= 0 ? "↑" : "↓"} {formatPercent(Math.abs(expenseDelta))} vs last month
             </p>
           )}

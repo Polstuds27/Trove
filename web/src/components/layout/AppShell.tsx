@@ -23,8 +23,6 @@ import { Avatar } from "../ui/Primitives";
 import { Dropdown } from "../ui/Controls";
 import { IconButton } from "../ui/Button";
 import { SyncIndicator } from "./SyncIndicator";
-import { Mascot } from "../ui/Mascot";
-import { MASCOT_BY_STATE } from "../ui/mascots";
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
