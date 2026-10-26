@@ -322,29 +322,34 @@ export function StatisticsPage() {
               </span>
             </div>
 
-            <p className="border-t border-line/70 px-5 py-3.5 text-[12px] leading-5 text-muted sm:px-6">
-              {now.toLocaleDateString(undefined, { month: "long" })}:{" "}
-              <span className="font-semibold text-income">
-                {formatMoney(currentMonth.income, currency, { compact: true })} in
-              </span>{" "}
-              <span className="text-faint">·</span>{" "}
-              <span className="font-semibold text-expense">
-                {formatMoney(currentMonth.expense, currency, { compact: true })} out
-              </span>{" "}
-              <span className="text-faint">·</span>{" "}
-              <span className={currentMonth.net >= 0 ? "font-semibold text-income" : "font-semibold text-expense"}>
-                {currentMonth.net >= 0 ? "+" : "−"}
-                {formatMoney(Math.abs(currentMonth.net), currency, { compact: true })} left over
-              </span>
-            </p>
           </SurfaceCard>
 
-          <div className="hidden justify-center pt-1 lg:flex">
-            <Mascot state="statistics" size={176} />
-          </div>
-          <div className="flex justify-center lg:hidden">
-            <Mascot state="statistics" size={138} />
-          </div>
+          {/* The month's one-line reading, with the mascot anchored to it rather
+              than left floating in the gap between report cards. */}
+          <GlassPanel className="flex items-center gap-3 py-3 pl-5 pr-3 sm:pl-6 sm:pr-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] leading-5 text-muted">
+                {now.toLocaleDateString(undefined, { month: "long" })}:{" "}
+                <span className="font-semibold text-income">
+                  {formatMoney(currentMonth.income, currency, { compact: true })} in
+                </span>{" "}
+                <span className="text-faint">·</span>{" "}
+                <span className="font-semibold text-expense">
+                  {formatMoney(currentMonth.expense, currency, { compact: true })} out
+                </span>
+              </p>
+              <p
+                className={`mt-0.5 text-[12px] font-semibold ${
+                  currentMonth.net >= 0 ? "text-income" : "text-expense"
+                }`}
+              >
+                {currentMonth.net >= 0 ? "+" : "−"}
+                {formatMoney(Math.abs(currentMonth.net), currency, { compact: true })} left over
+                this month
+              </p>
+            </div>
+            <Mascot state="statistics" size={104} className="shrink-0" />
+          </GlassPanel>
         </div>
       </div>
 

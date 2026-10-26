@@ -54,6 +54,7 @@ Branch: `redesign/spec`. Presentation only: no API, store, sync, auth or calcula
 - [x] Budget mobile one column
 - [x] Statistics desktop donut + paired bars + mascot
 - [x] Statistics mobile range pills + donut + legend + bars + mascot
+- [x] Statistics mascot anchored to the monthly summary strip (no floating gap)
 - [x] Loading, empty, error, offline for all four
 
 ### 5. Savings goals, Debts, Credit cards, Recurring, Installments, Calendar
