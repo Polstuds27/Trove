@@ -77,7 +77,7 @@ export function TransactionRow({
   const signed = tx.type === "income" ? "+" : tx.type === "expense" ? "−" : "";
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 ${className}`}>
+    <div className={`flex animate-rise items-center gap-3 px-4 py-2.5 ${className}`}>
       <span
         aria-hidden="true"
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-ink-soft"

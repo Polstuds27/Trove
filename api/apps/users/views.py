@@ -3,9 +3,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import status, views
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -61,32 +63,49 @@ class LoginSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         user = self.user
         code = (self.context["request"].data.get("otp") or "").strip()
-        if user.mfa_enabled:
-            if not code:
-                raise _mfa_required()
-            if looks_like_recovery_code(code):
-                # Lost-phone path: a backup code stands in for the TOTP and is
-                # consumed on use — the second attempt with it fails.
-                recovery = find_unused_code(user, code)
-                if recovery is None:
-                    from rest_framework.exceptions import ValidationError
+        try:
+            if user.mfa_enabled:
+                if not code:
+                    raise _mfa_required()
+                if looks_like_recovery_code(code):
+                    recovery = find_unused_code(user, code)
+                    if recovery is None:
+                        raise ValidationError({
+                            "otp": "That recovery code is invalid or already used.",
+                        })
+                    recovery.mark_used()
+                    log_audit(user, "mfa_recovery_used", request=self.context["request"])
+                elif looks_like_email_code(code):
+                    if not verify_email_challenge(user, code):
+                        raise ValidationError({"otp": "That email code is invalid or expired."})
+                    log_audit(user, "mfa_email_used", request=self.context["request"])
+                elif not verify_totp(user.mfa_secret, code):
+                    raise ValidationError({"otp": "Invalid or expired code."})
+        except APIException:
+            # The parent serializer minted a token before the MFA challenge.
+            # It was never delivered: don't show it as another active device.
+            RefreshToken(data["refresh"]).blacklist()
+            raise
+        # Keep a human-readable device label in the signed refresh token.
+        # Rotation preserves these claims without needing another database.
+        ua = self.context["request"].META.get("HTTP_USER_AGENT", "")
+        browser = next((name for marker, name in (
+            ("Edg", "Edge"), ("OPR", "Opera"), ("Firefox", "Firefox"),
+            ("FxiOS", "Firefox"), ("Chrome", "Chrome"), ("CriOS", "Chrome"),
+            ("Safari", "Safari"),
+        ) if marker in ua), "Browser")
+        platform = next((name for marker, name in (
+            ("iPhone", "iPhone"), ("iPad", "iPad"), ("Android", "Android"),
+            ("Windows", "Windows"), ("Macintosh", "Mac"), ("Linux", "Linux"),
+        ) if marker in ua), "device")
+        refresh = RefreshToken(data["refresh"])
+        refresh["device_name"] = f"{browser} on {platform}"
+        refresh["signed_in_at"] = timezone.now().isoformat()
+        data["refresh"] = str(refresh)
+        data["access"] = str(refresh.access_token)
+        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
-                    raise ValidationError({"otp": "That recovery code is invalid or already used."})
-                recovery.mark_used()
-                log_audit(user, "mfa_recovery_used", request=self.context["request"])
-            elif looks_like_email_code(code):
-                # Last-resort path (no phone, no backup codes): single-shot
-                # verify consumes on success and counts misses, so the guess
-                # budget applies here too. Login has no later save step.
-                if not verify_email_challenge(user, code):
-                    from rest_framework.exceptions import ValidationError
-
-                    raise ValidationError({"otp": "That email code is invalid or expired."})
-                log_audit(user, "mfa_email_used", request=self.context["request"])
-            elif not verify_totp(user.mfa_secret, code):
-                from rest_framework.exceptions import ValidationError
-
-                raise ValidationError({"otp": "Invalid or expired code."})
+        OutstandingToken.objects.filter(jti=refresh["jti"]).update(token=data["refresh"])
         data["user"] = {
             "email": user.email,
             "preferred_currency": user.preferred_currency,
@@ -324,10 +343,21 @@ class SessionsView(views.APIView):
     def get(self, request):
         from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
-        tokens = OutstandingToken.objects.filter(user=request.user).order_by("-created_at")
-        data = [
-            {"id": t.id, "created_at": t.created_at, "expires_at": t.expires_at} for t in tokens
-        ]
+        tokens = OutstandingToken.objects.filter(
+            user=request.user, expires_at__gt=timezone.now(), blacklistedtoken__isnull=True,
+        ).order_by("-created_at")
+        data = []
+        for token in tokens:
+            try:
+                claims = RefreshToken(token.token)
+            except TokenError:
+                continue
+            data.append({
+                "id": token.id, "jti": token.jti,
+                "created_at": token.created_at, "expires_at": token.expires_at,
+                "signed_in_at": claims.get("signed_in_at", token.created_at),
+                "device_name": claims.get("device_name", "Browser session"),
+            })
         return Response(data)
 
     def delete(self, request):
@@ -342,6 +372,7 @@ class SessionsView(views.APIView):
         except (OutstandingToken.DoesNotExist, ValueError, TypeError):
             return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
         BlacklistedToken.objects.get_or_create(token=token)
-        token.delete()
+        # Keep the outstanding row: deleting it cascades to the blacklist
+        # entry and makes the supposedly revoked refresh token usable again.
         log_audit(request.user, "session_revoke", entity_id=str(token_id), request=request)
         return Response(status=status.HTTP_204_NO_CONTENT)

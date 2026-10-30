@@ -108,7 +108,11 @@ export async function importSnapshot(file: SnapshotFile): Promise<SnapshotImport
       }
       const stamp = typeof row.created_at === "string" ? row.created_at : now;
       const updated = typeof row.updated_at === "string" ? row.updated_at : now;
-      const existing = (await table.get(id)) as { version?: unknown } | undefined;
+      const existing = (await table.get(id)) as { version?: unknown; bank_name?: string | null } | undefined;
+      if (entity === "accounts") {
+        if (row.bank_name === undefined) row.bank_name = existing?.bank_name ?? null;
+        else if (typeof row.bank_name !== "string") row.bank_name = null;
+      }
       if (existing) {
         const version = typeof existing.version === "number" ? existing.version : 0;
         await table.put({ ...row, version, sync_status: "pending", created_at: stamp, updated_at: updated } as never);

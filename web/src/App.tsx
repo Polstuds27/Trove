@@ -6,11 +6,13 @@
  * `/overview` so the first screen is always a real one.
  */
 import { useState } from "react";
-import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useSearchParams, type Location } from "react-router-dom";
+import { useModalBackground } from "./app/modalRoutes";
 
 import { useAuth } from "./auth/AuthContext";
 import { isAuthRoute } from "./app/navigation";
-import { AppShell } from "./components/layout/AppShell";
+import { AppShell, RouteTransition } from "./components/layout/AppShell";
+import { AppLockGate } from "./components/layout/AppLockGate";
 import { ErrorBoundary } from "./components/ui";
 import { QuickAddSheet } from "./features/transactions/QuickAddSheet";
 
@@ -91,34 +93,26 @@ function PublicRoutes() {
   );
 }
 
-function MainRoutes() {
+function MainRoutes({ location }: { location?: Location | string }) {
   return (
-    <Routes>
+    <Routes location={location}>
       <Route path="/" element={<Navigate to="/overview" replace />} />
       <Route path="/overview" element={<OverviewPage />} />
 
       {/* Accounts (credit cards share the same ledger detail/editor) */}
       <Route path="/accounts" element={<AccountsPage />} />
-      <Route path="/accounts/new" element={<AccountEditor />} />
       <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
-      <Route path="/accounts/:accountId/edit" element={<AccountEditor />} />
 
       {/* Transactions */}
       <Route path="/transactions" element={<TransactionsPage />} />
-      <Route path="/transactions/new" element={<TransactionEditor />} />
       <Route path="/transactions/:transactionId" element={<TransactionDetailPage />} />
-      <Route path="/transactions/:transactionId/edit" element={<TransactionEditor />} />
 
       {/* Categories */}
       <Route path="/categories" element={<CategoriesPage />} />
-      <Route path="/categories/new" element={<CategoryEditor />} />
-      <Route path="/categories/:categoryId/edit" element={<CategoryEditor />} />
 
       {/* Budgets */}
       <Route path="/budgets" element={<BudgetsPage />} />
-      <Route path="/budgets/new" element={<BudgetEditor />} />
       <Route path="/budgets/:budgetId" element={<BudgetDetailPage />} />
-      <Route path="/budgets/:budgetId/edit" element={<BudgetEditor />} />
 
       {/* Reporting */}
       <Route path="/statistics" element={<StatisticsPage />} />
@@ -126,33 +120,23 @@ function MainRoutes() {
 
       {/* Goals */}
       <Route path="/goals" element={<GoalsPage />} />
-      <Route path="/goals/new" element={<GoalEditor />} />
       <Route path="/goals/:goalId" element={<GoalDetailPage />} />
-      <Route path="/goals/:goalId/edit" element={<GoalEditor />} />
 
       {/* Debts */}
       <Route path="/debts" element={<DebtsPage />} />
-      <Route path="/debts/new" element={<DebtEditor />} />
       <Route path="/debts/:debtId" element={<DebtDetailPage />} />
-      <Route path="/debts/:debtId/edit" element={<DebtEditor />} />
 
       {/* Credit cards */}
       <Route path="/credit-cards" element={<CreditCardsPage />} />
-      <Route path="/credit-cards/new" element={<AccountEditor />} />
       <Route path="/credit-cards/:cardId" element={<AccountDetailPage />} />
-      <Route path="/credit-cards/:cardId/edit" element={<AccountEditor />} />
 
       {/* Recurring */}
       <Route path="/recurring" element={<RecurringPage />} />
-      <Route path="/recurring/new" element={<RecurringEditor />} />
       <Route path="/recurring/:recurringId" element={<RecurringDetailPage />} />
-      <Route path="/recurring/:recurringId/edit" element={<RecurringEditor />} />
 
       {/* Installments */}
       <Route path="/installments" element={<InstallmentsPage />} />
-      <Route path="/installments/new" element={<InstallmentEditor />} />
       <Route path="/installments/:installmentId" element={<InstallmentDetailPage />} />
-      <Route path="/installments/:installmentId/edit" element={<InstallmentEditor />} />
 
       {/* Organise */}
       <Route path="/search" element={<SearchPage />} />
@@ -180,13 +164,34 @@ function MainRoutes() {
   );
 }
 
+const EDITORS = [
+  { section: "accounts", param: "accountId", Editor: AccountEditor },
+  { section: "transactions", param: "transactionId", Editor: TransactionEditor },
+  { section: "categories", param: "categoryId", Editor: CategoryEditor },
+  { section: "budgets", param: "budgetId", Editor: BudgetEditor },
+  { section: "goals", param: "goalId", Editor: GoalEditor },
+  { section: "debts", param: "debtId", Editor: DebtEditor },
+  { section: "credit-cards", param: "cardId", Editor: AccountEditor },
+  { section: "recurring", param: "recurringId", Editor: RecurringEditor },
+  { section: "installments", param: "installmentId", Editor: InstallmentEditor },
+];
+
+function EditorRoutes() {
+  return <Routes>{EDITORS.flatMap(({ section, param, Editor }) => [
+    <Route key={`${section}-new`} path={`/${section}/new`} element={<Editor />} />,
+    <Route key={`${section}-edit`} path={`/${section}/:${param}/edit`} element={<Editor />} />,
+  ])}</Routes>;
+}
+
 export default function App() {
   const { isAuthenticated } = useAuth();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const [params] = useSearchParams();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   const onAuthScreen = isAuthRoute(pathname);
+  const { backgroundLocation, editorOpen } = useModalBackground(isAuthenticated);
 
   // `/transactions?add=expense` opens the sheet straight into that type.
   const deepLinkAdd = pathname === "/transactions" && params.get("add") !== null;
@@ -196,24 +201,35 @@ export default function App() {
     if (isAuthenticated && pathname !== "/reset-password" && !pathname.startsWith("/reset-password/")) {
       return <Navigate to="/overview" replace />;
     }
-    return <PublicRoutes />;
+    return (
+      <RouteTransition>
+        <PublicRoutes />
+      </RouteTransition>
+    );
   }
 
   if (!isAuthenticated) {
     // Public: the landing page owns `/` and `/landing`; the catch-all inside
     // `PublicRoutes` still forwards every other path to the sign-in screen.
-    return <PublicRoutes />;
+    return (
+      <RouteTransition>
+        <PublicRoutes />
+      </RouteTransition>
+    );
   }
 
   return (
     <>
-      <AppShell onQuickAdd={() => setQuickAddOpen(true)}>
-        {/* One broken route must not unmount the shell — and, without a
-            boundary, React unmounts everything and leaves a white page. */}
-        <ErrorBoundary>
-          <MainRoutes />
-        </ErrorBoundary>
-      </AppShell>
+      <AppLockGate>
+        <AppShell onQuickAdd={() => setQuickAddOpen(true)}>
+          {/* One broken route must not unmount the shell — and, without a
+              boundary, React unmounts everything and leaves a white page. */}
+          <ErrorBoundary>
+            <MainRoutes location={backgroundLocation} />
+            {editorOpen && <EditorRoutes />}
+          </ErrorBoundary>
+        </AppShell>
+      </AppLockGate>
       <QuickAddSheet
         open={quickAddOpen || deepLinkAdd}
         onClose={() => setQuickAddOpen(false)}

@@ -31,7 +31,7 @@ export function CacheClaimRecovery({ error }: { error: string | null }) {
             type="button"
             onClick={() => {
               void navigator.clipboard
-                ?.writeText(`FinTrack wipe failure — ${detail.name}: ${detail.message}`)
+                ?.writeText(`Trove wipe failure — ${detail.name}: ${detail.message}`)
                 .then(() => setCopied(true))
                 .catch(() => {});
             }}
@@ -58,7 +58,7 @@ export function CacheClaimRecovery({ error }: { error: string | null }) {
       </Button>
       {failed && (
         <p role="alert" className="text-xs text-expense">
-          Couldn&apos;t erase automatically — clear the browser&apos;s site data for FinTrack manually, then reopen it.
+          Couldn&apos;t erase automatically — clear the browser&apos;s site data for Trove manually, then reopen it.
         </p>
       )}
     </div>

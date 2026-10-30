@@ -1,45 +1,91 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useAuth } from "../../auth/AuthContext";
+import { db } from "../../db";
+import { PROFILE_KEY } from "../../db/profile";
+import { Avatar } from "./Primitives";
 import { IconButton } from "./Button";
 
 /**
- * Page header: establishes *what page am I on*, the period/filters in force, and
- * the primary actions available here (§48 of the redesign brief).
+ * Page header: desktop shows title + subtitle on the left and the page's one
+ * primary action on the right. Mobile flips the hierarchy (small subtitle above
+ * a 28–30 px title) and puts the user's avatar at the top-right, per spec §7.1.
  */
 export function PageHeader({
   title,
   subtitle,
+  mobileTitle,
+  mobileSubtitle,
   period,
   actions,
   leading,
   tabs,
+  showActionsOnMobile = false,
+  hideMobileAvatar = true,
   className = "",
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
-  /** The date range / filter in force, shown next to the title. */
+  mobileTitle?: ReactNode;
+  mobileSubtitle?: ReactNode;
   period?: ReactNode;
   actions?: ReactNode;
   leading?: ReactNode;
   tabs?: ReactNode;
+  showActionsOnMobile?: boolean;
+  hideMobileAvatar?: boolean;
   className?: string;
 }) {
+  const { email } = useAuth();
+  const cached = useLiveQuery(() => db.profile.get(PROFILE_KEY), []);
+  const cachedName = cached ? `${cached.first_name} ${cached.last_name}`.trim() : "";
+  const name = cachedName || cached?.email || email || "You";
+
   return (
-    <header className={`flex flex-col gap-3 ${className}`}>
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 items-start gap-2.5">
+    <header className={`flex flex-col gap-5 ${className}`}>
+      <div className="flex flex-nowrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5">
           {leading}
           <div className="min-w-0">
-            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-              <h1 className="truncate text-title text-ink sm:text-display-sm">{title}</h1>
-              {period}
+            <div className="lg:hidden">
+              {(mobileSubtitle ?? subtitle) && (
+                <p className="mb-1 truncate text-[13px] font-medium text-muted">{mobileSubtitle ?? subtitle}</p>
+              )}
+              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                <h1 className="trove-mobile-title truncate">{mobileTitle ?? title}</h1>
+                {period}
+              </div>
             </div>
-            {subtitle && <p className="mt-0.5 truncate text-sm text-muted">{subtitle}</p>}
+            <div className="hidden lg:block">
+              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                <h1 className="trove-page-title truncate">{title}</h1>
+                {period}
+              </div>
+              {subtitle && <p className="mt-1.5 text-[13px] leading-5 text-muted">{subtitle}</p>}
+            </div>
           </div>
         </div>
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+
+        <div className="flex shrink-0 items-center gap-2">
+          {actions && (
+            <div className={`${showActionsOnMobile ? "flex" : "hidden lg:flex"} flex-wrap items-center gap-2`}>
+              {actions}
+            </div>
+          )}
+          {!hideMobileAvatar && (
+            <Link
+              to="/settings"
+              aria-label="Open settings"
+              className="lg:hidden"
+            >
+              <Avatar name={name} size={42} className="bg-sage text-primary shadow-card dark:bg-cream dark:text-primary-contrast" />
+            </Link>
+          )}
+        </div>
       </div>
-      {tabs}
+      {tabs && <div>{tabs}</div>}
     </header>
   );
 }
@@ -95,7 +141,7 @@ export function PeriodStepper({
         <button
           type="button"
           onClick={onToday}
-          className="ml-1 rounded-lg px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary-soft-bg"
+          className="ml-1 rounded-full px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary-soft-bg"
         >
           Today
         </button>
@@ -116,9 +162,9 @@ export function DetailRow({
   className?: string;
 }) {
   return (
-    <div className={`flex items-baseline justify-between gap-4 py-1.5 ${className}`}>
-      <dt className="shrink-0 text-xs font-medium tracking-wide text-muted uppercase">{label}</dt>
-      <dd className="min-w-0 truncate text-right text-sm text-ink">{children}</dd>
+    <div className={`flex items-baseline justify-between gap-4 border-b border-line/70 py-2.5 last:border-b-0 ${className}`}>
+      <dt className="shrink-0 text-[13px] text-muted">{label}</dt>
+      <dd className="min-w-0 truncate text-right text-[13px] font-semibold text-ink">{children}</dd>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiFetch } from "./client";
+import { ApiError, apiFetch, refreshAccessToken, storeTokens } from "./client";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -59,5 +59,60 @@ describe("apiFetch transport failures", () => {
     expect(failure).toBeInstanceOf(ApiError);
     expect((failure as ApiError).status).toBe(401);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps credentials and retries later if connectivity drops during refresh", async () => {
+    storeTokens("expired-access", "valid-refresh");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(401, { detail: "expired" }))
+      .mockRejectedValueOnce(new TypeError("Network dropped"))
+      .mockResolvedValueOnce(jsonResponse(401, { detail: "expired" }))
+      .mockResolvedValueOnce(jsonResponse(200, { access: "renewed", refresh: "rotated" }))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(apiFetch("/sync/pull/")).rejects.toMatchObject({ status: 0 });
+    expect(localStorage.getItem("fintrack_refresh")).toBe("valid-refresh");
+    await expect(apiFetch("/sync/pull/")).resolves.toEqual({ ok: true });
+  });
+
+  it("reports refresh server outages as retryable instead of expired credentials", async () => {
+    storeTokens("expired-access", "valid-refresh");
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(jsonResponse(401, {}))
+      .mockResolvedValueOnce(jsonResponse(503, {})));
+    await expect(apiFetch("/sync/pull/")).rejects.toMatchObject({ status: 503 });
+    expect(localStorage.getItem("fintrack_refresh")).toBe("valid-refresh");
+  });
+
+  it("reuses a token another tab rotated while waiting for the refresh lock", async () => {
+    storeTokens("old-access", "old-refresh");
+    const fetchMock = vi.fn();
+    const request = vi.fn(async (_name: string, rotate: () => Promise<boolean>) => {
+      storeTokens("other-tab-access", "other-tab-refresh");
+      return rotate();
+    });
+    vi.stubGlobal("navigator", { locks: { request } });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(refreshAccessToken()).resolves.toBe(true);
+    expect(request).toHaveBeenCalledOnce();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not rotate again for a delayed 401 sent with the old access token", async () => {
+    storeTokens("old-access", "old-refresh");
+    let release!: (response: Response) => void;
+    const delayed = new Promise<Response>((resolve) => { release = resolve; });
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(delayed)
+      .mockResolvedValueOnce(jsonResponse(401, {}))
+      .mockResolvedValueOnce(jsonResponse(200, { access: "new-access", refresh: "new-refresh" }))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    const first = apiFetch("/first/");
+    await apiFetch("/second/");
+    release(jsonResponse(401, {}));
+    await expect(first).resolves.toEqual({ ok: true });
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/auth/refresh/"))).toHaveLength(1);
   });
 });

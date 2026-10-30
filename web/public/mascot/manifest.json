@@ -1,0 +1,82 @@
+{
+  "idle": {
+    "file": "/mascot/idle.png",
+    "w": 410,
+    "h": 448
+  },
+  "celebrate": {
+    "file": "/mascot/celebrate.png",
+    "w": 415,
+    "h": 448
+  },
+  "delight": {
+    "file": "/mascot/delight.png",
+    "w": 373,
+    "h": 448
+  },
+  "sleep": {
+    "file": "/mascot/sleep.png",
+    "w": 399,
+    "h": 439
+  },
+  "cheer": {
+    "file": "/mascot/cheer.png",
+    "w": 366,
+    "h": 448
+  },
+  "read": {
+    "file": "/mascot/read.png",
+    "w": 433,
+    "h": 448
+  },
+  "talk": {
+    "file": "/mascot/talk.png",
+    "w": 444,
+    "h": 448
+  },
+  "rest": {
+    "file": "/mascot/rest.png",
+    "w": 371,
+    "h": 448
+  },
+  "ledger": {
+    "file": "/mascot/ledger.png",
+    "w": 325,
+    "h": 448
+  },
+  "coin": {
+    "file": "/mascot/coin.png",
+    "w": 337,
+    "h": 448
+  },
+  "shield": {
+    "file": "/mascot/shield.png",
+    "w": 302,
+    "h": 448
+  },
+  "shy": {
+    "file": "/mascot/shy.png",
+    "w": 358,
+    "h": 448
+  },
+  "note": {
+    "file": "/mascot/note.png",
+    "w": 380,
+    "h": 448
+  },
+  "save": {
+    "file": "/mascot/save.png",
+    "w": 386,
+    "h": 448
+  },
+  "guard": {
+    "file": "/mascot/guard.png",
+    "w": 368,
+    "h": 448
+  },
+  "peek": {
+    "file": "/mascot/peek.png",
+    "w": 448,
+    "h": 415
+  }
+}

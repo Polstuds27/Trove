@@ -68,6 +68,7 @@ export function fromServer(
         id: str(payload.id),
         group_id: strOrNull(payload.group),
         name: str(payload.name),
+        bank_name: strOrNull(payload.bank_name),
         type: str(payload.type, "cash"),
         currency: str(payload.currency, "USD"),
         opening_balance: num(payload.opening_balance),
@@ -217,6 +218,7 @@ function normalizeFrequency<T extends string>(value: unknown, allowed: readonly 
 const PAYLOAD_FIELDS: Record<EntityName, string[]> = {
   accounts: [
     "name",
+    "bank_name",
     "type",
     "currency",
     "opening_balance",
@@ -276,7 +278,7 @@ export function toServerPayload(entity: EntityName, row: Record<string, unknown>
     if (value === undefined) continue;
     // Only foreign keys and explicit nullable columns may send null; the server
     // drops nulls for NOT NULL fields anyway, so skipping is equivalent and safer.
-    if (value === null && !field.endsWith("_id")) continue;
+    if (value === null && !field.endsWith("_id") && !(entity === "accounts" && field === "bank_name")) continue;
     payload[target] = value;
   }
   return payload;

@@ -1,0 +1,10 @@
+{% autoescape off %}Trove — Your money, clearly.
+
+Hi{% if name %} {{ name }}{% endif %},
+
+Welcome to Trove. Confirm your email address to finish setting up your account:
+{{ link }}
+
+Didn't create a Trove account? You can safely ignore this email.
+
+The Trove team{% endautoescape %}

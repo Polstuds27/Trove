@@ -7,49 +7,45 @@
  */
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarClock, Layers, Plus, Receipt } from "lucide-react";
+import { CalendarClock, Plus } from "lucide-react";
 import {
-  Alert,
   Button,
-  Card,
   EmptyState,
+  GlassPanel,
   LinkButton,
+  Mascot,
   PageHeader,
   ProgressBar,
+  StatusBadge,
+  SurfaceCard,
 } from "../../components/ui";
-import { formatMoney, formatPercent, formatRelativeDay } from "../../design/format";
+import { formatDate, formatMoney, formatPercent } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
 import { installmentProgress, type InstallmentProgress } from "../analytics/engine";
+
+const CADENCE: Record<string, { unit: string }> = {
+  weekly: { unit: "week" },
+  monthly: { unit: "month" },
+  quarterly: { unit: "quarter" },
+};
 
 export function InstallmentsPage() {
   const { lookups, dataset, ready } = useLocalData();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const plans = useMemo(
     () => installmentProgress(dataset.installments, dataset.transactions, lookups),
     [dataset.installments, dataset.transactions, lookups],
   );
 
-  const currency = lookups.dataset.baseCurrency;
-  const totalRemaining = plans.reduce(
-    (sum, item) => sum + Math.max(0, item.plan.total_amount - item.paidAmount),
-    0,
-  );
-  const paidTotal = plans.reduce((sum, item) => sum + item.paidAmount, 0);
-  const dueSoon = plans.filter(
-    (item) => item.nextDueDate !== null && daysOut(item.nextDueDate) <= 7,
-  ).length;
+  const selected = plans.find((item) => item.plan.id === selectedId) ?? plans[0] ?? null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-[18px]">
       <PageHeader
         title="Installments"
-        subtitle={
-          plans.length > 0
-            ? `${plans.length} active plan${plans.length === 1 ? "" : "s"} · ${dueSoon} due within a week`
-            : "Split a purchase across time"
-        }
+        subtitle="Schedules and progress"
         actions={
           <Button
             variant="primary"
@@ -62,44 +58,12 @@ export function InstallmentsPage() {
         }
       />
 
-      {plans.length > 0 && (
-        <Card>
-          <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted uppercase">
-                Still to pay
-              </p>
-              <p className="tabular mt-0.5 text-display-sm font-semibold text-ink">
-                {formatMoney(totalRemaining, currency)}
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                {formatMoney(paidTotal, currency)} already settled
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-x-8">
-              <div>
-                <p className="text-xs text-muted">Plans</p>
-                <p className="tabular text-title font-semibold text-ink">{plans.length}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted">Due soon</p>
-                <p
-                  className={`tabular text-title font-semibold ${dueSoon > 0 ? "text-warning" : "text-ink"}`}
-                >
-                  {dueSoon}
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {ready && dataset.installments.length === 0 ? (
-        <Card>
+      {ready && plans.length === 0 ? (
+        <GlassPanel className="px-6 py-12">
           <EmptyState
-            icon={<Layers className="h-7 w-7" />}
+            state="installments"
             title="No installment plans yet"
-            description="Bought something on a payment plan? Record it once and FinTrack tracks every part — how many are left, what each costs, and when the next one is due — all computed from your own ledger."
+            description="Bought something on a payment plan? Record it once and Trove tracks every part — how many are left, what each costs, and when the next one is due."
             action={
               <Button
                 variant="primary"
@@ -111,132 +75,176 @@ export function InstallmentsPage() {
             }
             secondaryAction={<LinkButton to="/calendar">Open the calendar</LinkButton>}
           />
-        </Card>
+        </GlassPanel>
       ) : (
-        <div className="space-y-3">
-          {plans.map((item) => (
-            <PlanCard
-              key={item.plan.id}
-              item={item}
-              expanded={selected === item.plan.id}
-              onToggle={() => setSelected(selected === item.plan.id ? null : item.plan.id)}
-              onOpen={() => navigate(`/installments/${item.plan.id}`)}
-              onEdit={() => navigate(`/installments/${item.plan.id}/edit`)}
-            />
-          ))}
-        </div>
-      )}
+        <>
+          <div className="grid gap-[17px] sm:grid-cols-2">
+            {plans.map((item) => (
+              <PlanCard
+                key={item.plan.id}
+                item={item}
+                selected={selected?.plan.id === item.plan.id}
+                onSelect={() => setSelectedId(item.plan.id)}
+                onOpen={() => navigate(`/installments/${item.plan.id}`)}
+                onEdit={() => navigate(`/installments/${item.plan.id}/edit`)}
+              />
+            ))}
+          </div>
 
-      <Alert tone="info" title="Payments are ordinary transactions">
-        Marking a part as paid happens by recording the transaction itself. That keeps spending
-        reports, account balances and this schedule telling the same story — even when the payment
-        was entered on a phone with no connection.
-      </Alert>
+          {selected && <ScheduleCard item={selected} />}
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <LinkButton to="/installments/new" className="gap-1">
+              <Plus className="h-4 w-4" /> Add another plan
+            </LinkButton>
+            <LinkButton to="/calendar">Open the calendar</LinkButton>
+          </div>
+
+          <div className="flex justify-end pr-2 sm:pr-8">
+            <Mascot state="installments" size={150} className="sm:hidden" />
+            <Mascot state="installments" size={188} className="hidden sm:block" />
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function daysOut(date: Date): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.round((date.getTime() - today.getTime()) / 86_400_000);
-}
-
 function PlanCard({
   item,
-  expanded,
-  onToggle,
+  selected,
+  onSelect,
   onOpen,
   onEdit,
 }: {
   item: InstallmentProgress;
-  expanded: boolean;
-  onToggle: () => void;
+  selected: boolean;
+  onSelect: () => void;
   onOpen: () => void;
   onEdit: () => void;
 }) {
   const { plan } = item;
-  const remaining = Math.max(0, plan.total_amount - item.paidAmount);
   const done = item.remainingParts === 0;
+  const cadence = CADENCE[plan.frequency] ?? CADENCE.monthly;
+  const remaining = Math.max(0, plan.total_amount - item.paidAmount);
 
   return (
-    <Card className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <button type="button" onClick={onToggle} aria-expanded={expanded} className="min-w-0 flex-1 text-left">
-          <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <Receipt aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate">{plan.notes || "Installment plan"}</span>
-          </p>
-          <p className="tabular mt-0.5 text-xs text-muted">
-            {plan.currency} · {item.paidParts} of {plan.parts_count} parts ·{" "}
-            {formatMoney(item.partAmount, plan.currency)} each
-          </p>
+    <SurfaceCard
+      className={`flex flex-col p-5 transition-shadow sm:p-6 ${
+        selected ? "ring-1 ring-primary/35" : ""
+      }`}
+    >
+      <button type="button" onClick={onSelect} className="text-left">
+        <p className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate text-[16px] font-semibold leading-6 text-ink">
+            {plan.notes || "Installment plan"}
+          </span>
+          <span className="shrink-0 text-[11.5px] text-muted">
+            {plan.parts_count} {plan.frequency === "weekly" ? "weeks" : plan.frequency === "quarterly" ? "quarters" : "months"}
+            <span className="px-1 text-faint">·</span>
+            {formatMoney(plan.total_amount, plan.currency)}
+          </span>
+        </p>
+
+        <div className="mt-5 flex items-baseline gap-1.5">
+          <span className="tabular text-[36px] font-bold leading-none tracking-[-0.04em] text-primary sm:text-[42px]">
+            {formatMoney(item.partAmount, plan.currency)}
+          </span>
+          <span className="text-[12px] text-muted">/ {cadence.unit}</span>
+        </div>
+
+        <ProgressBar
+          value={Math.min(100, Math.max(0, item.percent))}
+          tone={done ? "income" : "primary"}
+          className="mt-4"
+          label={`${plan.notes || "Installment"} repayment progress`}
+        />
+
+        <p className="tabular mt-2 flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted">
+          <span>
+            {item.paidParts} of {plan.parts_count} paid
+          </span>
+          <span className="text-faint">·</span>
+          <span className={`font-semibold ${done ? "text-income" : "text-ink-soft"}`}>
+            {done ? "Fully paid" : `${formatMoney(remaining, plan.currency)} remaining`}
+          </span>
+          {!done && item.nextDueDate && (
+            <>
+              <span className="text-faint">·</span>
+              <span className="inline-flex items-center gap-1">
+                <CalendarClock aria-hidden="true" className="h-3.5 w-3.5" />
+                Next {formatDate(item.nextDueDate, "short")}
+              </span>
+            </>
+          )}
+        </p>
+      </button>
+
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-line/70 pt-3">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="text-[12px] font-semibold text-primary hover:underline"
+        >
+          {selected ? "Schedule shown below" : "View schedule"}
         </button>
-        <span className="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            onClick={onOpen}
-            className="text-xs font-medium text-muted hover:text-ink"
-          >
+        <span className="flex items-center gap-3 text-[12px] font-medium">
+          <button type="button" onClick={onOpen} className="text-muted hover:text-ink">
             Details
           </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="text-xs font-medium text-primary hover:underline"
-          >
+          <button type="button" onClick={onEdit} className="text-muted hover:text-ink">
             Edit
           </button>
         </span>
       </div>
+    </SurfaceCard>
+  );
+}
 
-      <div className="mt-3 flex items-baseline justify-between gap-3">
-        <span className="tabular text-title font-semibold text-ink">
-          {formatMoney(remaining, plan.currency)}
-        </span>
-        <span className="tabular text-xs text-muted">
-          {done ? "Fully paid" : `${formatPercent(item.percent)} settled`}
-        </span>
+function ScheduleCard({ item }: { item: InstallmentProgress }) {
+  const { plan } = item;
+  const nextIndex = item.schedule.findIndex((part) => !part.paid);
+
+  return (
+    <SurfaceCard className="overflow-hidden">
+      <div className="flex items-baseline justify-between gap-3 border-b border-line/70 px-5 py-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 className="truncate text-[16px] font-semibold leading-6 text-ink">
+            {plan.notes || "Installment"} schedule
+          </h2>
+          <p className="mt-0.5 text-[12px] text-muted">
+            {formatPercent(item.percent)} paid · {formatMoney(Math.max(0, plan.total_amount - item.paidAmount), plan.currency)} remaining
+          </p>
+        </div>
+        <LinkButton to={`/installments/${plan.id}`} className="shrink-0 text-[12px]">
+          Details
+        </LinkButton>
       </div>
 
-      <ProgressBar
-        value={Math.min(100, item.percent)}
-        size="sm"
-        tone={done ? "income" : "primary"}
-        className="mt-2"
-        label={`${plan.notes || "Installment"} repayment progress`}
-      />
-
-      {!done && item.nextDueDate && (
-        <p
-          className={`mt-2 flex items-center gap-1.5 text-xs ${
-            daysOut(item.nextDueDate) <= 7 ? "text-warning" : "text-muted"
-          }`}
-        >
-          <CalendarClock aria-hidden="true" className="h-3.5 w-3.5" />
-          Next part {formatRelativeDay(item.nextDueDate)}
-        </p>
-      )}
-
-      {expanded && (
-        <ul className="mt-3 grid gap-1 border-t border-line pt-3 sm:grid-cols-2">
-          {item.schedule.map((part) => (
+      <ul className="divide-y divide-line/70 px-5 sm:px-6">
+        {item.schedule.map((part) => {
+          const status: "paid" | "next" | "upcoming" = part.paid
+            ? "paid"
+            : part.index === nextIndex
+              ? "next"
+              : "upcoming";
+          return (
             <li
               key={part.index}
-              className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs ${
-                part.paid ? "bg-income-soft text-income" : "bg-surface-sunken text-muted"
-              }`}
+              className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 py-2.5"
             >
-              <span>
-                Part {part.index + 1} · {formatRelativeDay(part.date)}
+              <span className="text-[12.5px] text-muted">
+                <span className="hidden sm:inline">Part {part.index + 1} · </span>
+                {formatDate(part.date, "medium")}
               </span>
-              <span className="tabular font-medium">
+              <StatusBadge status={status} />
+              <span className="tabular text-right text-[13px] font-semibold text-ink">
                 {formatMoney(part.amount, plan.currency)}
               </span>
             </li>
-          ))}
-        </ul>
-      )}
-    </Card>
+          );
+        })}
+      </ul>
+    </SurfaceCard>
   );
 }

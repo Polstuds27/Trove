@@ -84,7 +84,7 @@ export function AppearanceSection() {
 
       <Panel title="Motion" description="Reduced motion is honoured from your system setting.">
         <p className="text-sm text-muted">
-          FinTrack follows your operating system's reduced-motion preference: when it is on,
+          Trove follows your operating system's reduced-motion preference: when it is on,
           charts render without transitions and the shell stops animating. Change it in your
           system accessibility settings and the app follows automatically — there is nothing to
           configure here.

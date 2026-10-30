@@ -222,9 +222,9 @@ export function monthsBetween(start: Date, end: Date): number {
 }
 
 /** Calendar grid for a month, Monday-first, padded to whole weeks. */
-export function calendarGrid(month: Date, monthStartDay = 1): Date[] {
+export function calendarGrid(month: Date, monthStartDay = 1, weekStartsOn: 0 | 1 = 1): Date[] {
   const first = startOfMonth(month, monthStartDay);
-  const offset = (first.getDay() + 6) % 7;
+  const offset = (first.getDay() - weekStartsOn + 7) % 7;
   const gridStart = addDays(first, -offset);
   const cells = daysInMonth(first.getFullYear(), first.getMonth()) + offset;
   const total = Math.ceil(cells / 7) * 7;

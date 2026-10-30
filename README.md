@@ -1,4 +1,4 @@
-# FinTrack
+# Trove
 
 Offline-first personal finance management PWA.
 

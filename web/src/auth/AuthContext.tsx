@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -43,6 +44,7 @@ export interface AuthState {
    * `mfa_required`; the caller must retry with `otp`.
    */
   login: (email: string, password: string, otp?: string) => Promise<{ mfaRequired: boolean }>;
+  reauthenticate: (password: string, otp?: string) => Promise<{ mfaRequired: boolean }>;
   logout: () => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -50,6 +52,7 @@ export interface AuthState {
   verifyEmail: (uid: string, token: string) => Promise<void>;
   refreshProfile: () => Promise<UserProfile | null>;
   setProfile: (profile: UserProfile) => void;
+  updateProfile: (patch: Partial<Pick<UserProfile, "first_name" | "last_name" | "preferred_currency">>) => Promise<UserProfile>;
   /**
    * Drop the stored credentials and treat the session as logged out — without
    * touching IndexedDB. Unlike `logout`, the held queue survives so signing
@@ -78,7 +81,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 /** Shown when the previous account's rows can't be removed before a sign-in. */
 export const CACHE_CLAIM_ERROR =
-  "Couldn't clear the previous account's data. Close any other FinTrack tabs, then try again.";
+  "Couldn't clear the previous account's data. Close any other Trove tabs, then try again.";
 
 /** True when sign-in aborted on an unverifiable local cache (not on credentials). */
 export function isCacheClaimError(error: unknown): boolean {
@@ -183,7 +186,7 @@ async function claimLocalData(nextEmail: string, options?: { repair?: boolean })
       // boot check never destroys data on its own.
       if (!options?.repair) {
         lastWipeFailure = describeFailure(error);
-        console.error("FinTrack: local cache wipe failed", lastWipeFailure);
+        console.error("Trove: local cache wipe failed", lastWipeFailure);
         throw new ApiError(500, CACHE_CLAIM_ERROR);
       }
       try {
@@ -193,10 +196,10 @@ async function claimLocalData(nextEmail: string, options?: { repair?: boolean })
         ]);
         // Prove the database is usable again before stamping ownership of it.
         await db.open();
-        console.warn("FinTrack: cache wipe failed; recovered with a full database reset");
+        console.warn("Trove: cache wipe failed; recovered with a full database reset");
       } catch (repairError) {
         lastWipeFailure = describeFailure(repairError);
-        console.error("FinTrack: local cache wipe and repair failed", lastWipeFailure);
+        console.error("Trove: local cache wipe and repair failed", lastWipeFailure);
         throw new ApiError(500, CACHE_CLAIM_ERROR);
       }
     }
@@ -217,41 +220,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(() => localStorage.getItem(EMAIL_KEY));
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => Boolean(getAccessToken()));
+  const profileRevision = useRef(0);
+  const profileSaves = useRef(0);
+  const acceptProfile = useCallback((data: UserProfile) => {
+    profileRevision.current += 1;
+    setProfile(data);
+    void saveProfileCache({
+      first_name: data.first_name ?? "",
+      last_name: data.last_name ?? "",
+      email: data.email ?? "",
+      preferred_currency: data.preferred_currency,
+    }).catch(() => {});
+  }, []);
+
+  const updateProfile = useCallback(async (patch: Partial<Pick<UserProfile, "first_name" | "last_name" | "preferred_currency">>) => {
+    // Invalidate reads started before this save, including while PATCH is pending.
+    profileRevision.current += 1;
+    profileSaves.current += 1;
+    try {
+      const data = await apiFetch<UserProfile>("/auth/profile/", {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      acceptProfile(data);
+      return data;
+    } finally {
+      profileSaves.current -= 1;
+    }
+  }, [acceptProfile]);
 
   const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
-    if (!getAccessToken()) return null;
+    if (!getAccessToken() || profileSaves.current > 0) return null;
+    const revision = profileRevision.current;
     try {
       const data = await apiFetch<UserProfile>("/auth/profile/");
-      setProfile(data);
-      // Cache the display identity for offline use. Fire-and-forget: a cache
-      // write must never fail a refresh.
-      void saveProfileCache({
-        first_name: data.first_name ?? "",
-        last_name: data.last_name ?? "",
-        email: data.email ?? "",
-        preferred_currency: data.preferred_currency ?? "",
-      }).catch(() => {});
+      if (revision !== profileRevision.current) return null;
+      acceptProfile(data);
       return data;
     } catch {
       // An expired or revoked session must not block the shell: local data stays
       // readable and the sync indicator explains the rest.
       return null;
     }
-  }, []);
+  }, [acceptProfile]);
 
   const login = useCallback(
-    async (nextEmail: string, password: string, otp?: string): Promise<{ mfaRequired: boolean }> => {
+    async (nextEmail: string, password: string, otp?: string, options?: { preserveLocalData: boolean }): Promise<{ mfaRequired: boolean }> => {
       try {
         const data = await apiFetch<{ access: string; refresh: string }>("/auth/login/", {
           method: "POST",
           body: JSON.stringify(
             otp ? { email: nextEmail, password, otp } : { email: nextEmail, password },
           ),
-        });
+        }, false);
         // Claim the cache *before* a token exists, with repair: the server
         // already accepted these credentials, so a damaged local database is
         // reset rather than blocking a valid sign-in.
-        await claimLocalData(nextEmail, { repair: true });
+        if (options?.preserveLocalData) {
+          // Recovery must never wipe/reassign the ledger, even if its owner
+          // stamp is damaged. A different account uses the normal login flow.
+          if (localOwner() !== ownerKey(nextEmail) || await hasForeignResidue(ownerKey(nextEmail))) {
+            throw new ApiError(409, "Couldn't verify this device's saved data. Your changes are still on this device; reconnect and try again.");
+          }
+        } else {
+          await claimLocalData(nextEmail, { repair: true });
+        }
+        profileRevision.current += 1;
         storeTokens(data.access, data.refresh);
         localStorage.setItem(EMAIL_KEY, nextEmail);
         setEmail(nextEmail);
@@ -268,6 +302,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refreshProfile],
   );
 
+  const reauthenticate = useCallback((password: string, otp?: string) => {
+    if (!email) throw new ApiError(401, "Sign in to your account to resume syncing.");
+    return login(email, password, otp, { preserveLocalData: true });
+  }, [email, login]);
+
   const flushCredentials = useCallback(() => {
     // A dead access token that can no longer rotate wedges the app:
     // `isAuthenticated` stays true, `/login` redirects away, and the queue
@@ -278,6 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearTokens();
     localStorage.removeItem(EMAIL_KEY);
     setEmail(null);
+    profileRevision.current += 1;
     setProfile(null);
     setIsAuthenticated(false);
   }, []);
@@ -297,6 +337,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(EMAIL_KEY);
     localStorage.removeItem(LOCAL_OWNER_KEY);
     setEmail(null);
+    profileRevision.current += 1;
     setProfile(null);
     setIsAuthenticated(false);
     try {
@@ -306,7 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (cause) {
       // Local state is already cleared; the next sign-in re-checks the cache
       // and refuses to continue if these rows are still here.
-      console.warn("FinTrack: local cache wipe failed on sign-out", cause);
+      console.warn("Trove: local cache wipe failed on sign-out", cause);
     }
   }, []);
 
@@ -347,7 +388,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!email) return;
     claimLocalData(email).catch((error: unknown) => {
-      console.error("FinTrack: could not verify whose cache this is", error);
+      console.error("Trove: could not verify whose cache this is", error);
     });
   }, [email]);
 
@@ -357,13 +398,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated,
       profile,
       login,
+      reauthenticate,
       logout,
       register,
       requestPasswordReset,
       resetPassword,
       verifyEmail,
       refreshProfile,
-      setProfile,
+      setProfile: acceptProfile,
+      updateProfile,
       flushCredentials,
     }),
     [
@@ -371,6 +414,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated,
       profile,
       login,
+      reauthenticate,
       logout,
       flushCredentials,
       register,
@@ -378,6 +422,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       verifyEmail,
       refreshProfile,
+      acceptProfile,
+      updateProfile,
     ],
   );
 

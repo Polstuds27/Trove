@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { usePresence } from "../../lib/usePresence";
 import { IconButton } from "./Button";
+import { acquireDialog, isTopDialog } from "./dialogLayer";
 
 type OverlaySize = "sm" | "md" | "lg" | "xl";
 
@@ -48,7 +50,11 @@ export function Overlay({
   busy,
 }: OverlayProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const dialogId = useRef(Symbol("dialog"));
+  const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
+  // Dismissal keeps the panel mounted for one short exit animation.
+  const { mounted, closing } = usePresence(open, 200);
   // Callbacks arrive as fresh closures from most call sites (inline
   // `onClose={() => ...}`); reading them through refs keeps the lifecycle
   // effect independent of their identity. Before this, EVERY parent render
@@ -59,13 +65,25 @@ export function Overlay({
   onCloseRef.current = onClose;
   const busyRef = useRef(busy);
   busyRef.current = busy;
-  // Autofocus + focus-restore run once per opening, tracked by ref instead of
-  // effect identity so re-renders can never replay them mid-session.
-  const openedRef = useRef(false);
-
+  useEffect(() => {
+    const visual = window.visualViewport;
+    if (!open || !visual) return;
+    // Mobile keyboards resize the visual viewport, often without changing
+    // CSS vh/dvh. Keep the sheet and its scroll area above the keyboard.
+    const resize = () => setViewport({ height: visual.height, top: visual.offsetTop });
+    resize();
+    visual.addEventListener("resize", resize);
+    visual.addEventListener("scroll", resize);
+    return () => {
+      visual.removeEventListener("resize", resize);
+      visual.removeEventListener("scroll", resize);
+    };
+  }, [open]);
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (!isTopDialog(dialogId.current)) return;
     if (event.key === "Escape" && !busyRef.current) {
       event.stopPropagation();
+      event.stopImmediatePropagation();
       onCloseRef.current();
       return;
     }
@@ -87,58 +105,51 @@ export function Overlay({
   }, []);
 
   useEffect(() => {
-    if (!open) {
-      openedRef.current = false;
-      return;
-    }
-    if (openedRef.current) return;
-    openedRef.current = true;
+    if (!open) return;
+    const id = dialogId.current;
     restoreFocus.current = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const release = acquireDialog(id);
     document.addEventListener("keydown", handleKeyDown, true);
 
     const timer = window.setTimeout(() => {
       // Focus an explicit target only; falling back to the panel div steals
       // focus from whatever the user is typing into.
-      panelRef.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+      if (isTopDialog(id)) panelRef.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     }, 20);
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown, true);
-      document.body.style.overflow = previousOverflow;
+      const wasTop = isTopDialog(id);
+      release();
       window.clearTimeout(timer);
-      restoreFocus.current?.focus?.();
+      if (wasTop && restoreFocus.current?.isConnected) restoreFocus.current.focus({ preventScroll: true });
     };
   }, [open, handleKeyDown]);
 
-  if (!open) return null;
+  if (!mounted) return null;
+
+  const backdropAnim = closing ? "animate-fade-out" : "animate-fade-in";
 
   const shell =
     variant === "sheet"
-      ? "fixed inset-x-0 bottom-0 z-50 animate-slide-up rounded-t-2xl sm:inset-x-auto sm:right-0 sm:top-0 sm:animate-slide-left sm:rounded-none sm:rounded-l-2xl"
+      ? "items-end justify-center sm:items-stretch sm:justify-end"
       : variant === "drawer"
-        ? "fixed inset-y-0 right-0 z-50 w-full max-w-md animate-slide-left rounded-l-2xl"
-        : "fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6";
+        ? "items-stretch justify-end"
+        : "items-end justify-center sm:items-center sm:p-6";
 
   const panel = variant === "center" ? SIZES[size] : TITLES[size];
 
   return createPortal(
-    <div className={shell}>
-      {variant === "center" && (
-        <div
-          className="absolute inset-0 animate-fade-in bg-overlay/40 backdrop-blur-[2px]"
-          onClick={() => !busy && onClose()}
-          aria-hidden="true"
-        />
-      )}
-      {variant !== "center" && (
-        <div
-          className="absolute inset-0 animate-fade-in bg-overlay/40 backdrop-blur-[2px]"
-          onClick={() => !busy && onClose()}
-          aria-hidden="true"
-        />
-      )}
+    <div
+      className={`fixed inset-0 z-50 flex ${shell} ${closing ? "pointer-events-none" : ""}`}
+      style={viewport ? { height: viewport.height, top: viewport.top, bottom: "auto" } : undefined}
+      aria-hidden={closing || undefined}
+    >
+      <div
+        className={`absolute inset-0 bg-overlay/20 ${backdropAnim}`}
+        onClick={() => !busy && onClose()}
+        aria-hidden="true"
+      />
 
       <div
         ref={panelRef}
@@ -146,12 +157,12 @@ export function Overlay({
         aria-modal="true"
         aria-label={typeof title === "string" ? title : undefined}
         tabIndex={-1}
-        className={`relative flex max-h-[92vh] flex-col overflow-hidden border border-line bg-surface shadow-overlay outline-none ${
+        className={`relative flex min-h-0 w-full max-h-[92%] flex-col overflow-hidden border border-line bg-surface shadow-lg outline-none ${
           variant === "sheet"
-            ? "rounded-t-2xl sm:rounded-l-2xl sm:rounded-tr-none"
+            ? `rounded-t-2xl sm:h-full sm:max-h-full sm:rounded-l-2xl sm:rounded-tr-none ${closing ? "animate-slide-down sm:animate-slide-right" : "animate-slide-up sm:animate-slide-left"}`
             : variant === "drawer"
-              ? "rounded-l-2xl"
-              : "animate-rise rounded-2xl sm:rounded-2xl"
+              ? `h-full max-h-full rounded-l-2xl ${closing ? "animate-slide-right" : "animate-slide-left"}`
+              : `rounded-2xl sm:rounded-2xl ${closing ? "animate-panel-out" : "animate-panel-in"}`
         } ${panel}`}
       >
         {variant === "sheet" && (
@@ -160,7 +171,7 @@ export function Overlay({
           </div>
         )}
 
-        <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-title text-ink">{title}</h2>
             {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
@@ -170,10 +181,10 @@ export function Overlay({
           </IconButton>
         </header>
 
-        <div className="scroll-area flex-1 px-5 py-4">{children}</div>
+        <div className="scroll-area min-h-0 flex-1 overflow-x-hidden px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:px-5 sm:pb-4">{children}</div>
 
         {footer && (
-          <footer className="flex items-center justify-end gap-2 border-t border-line bg-surface px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pb-3">
+          <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pb-3">
             {footer}
           </footer>
         )}

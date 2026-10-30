@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "app": "https://gameimagekit.com",
+    "version": "1.0",
+    "image": "Trove Sprite Atlas",
+    "size": {
+      "w": 2048,
+      "h": 2048
+    }
+  },
+  "slices": [
+    {
+      "name": "Trove_Sprite_Atlas_001",
+      "x": 98,
+      "y": 57,
+      "w": 381,
+      "h": 483,
+      "canvasW": 381,
+      "canvasH": 483,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_002",
+      "x": 560,
+      "y": 49,
+      "w": 398,
+      "h": 491,
+      "canvasW": 398,
+      "canvasH": 491,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_003",
+      "x": 1088,
+      "y": 49,
+      "w": 347,
+      "h": 483,
+      "canvasW": 347,
+      "canvasH": 483,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_004",
+      "x": 1536,
+      "y": 57,
+      "w": 427,
+      "h": 514,
+      "canvasW": 427,
+      "canvasH": 514,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_005",
+      "x": 98,
+      "y": 588,
+      "w": 381,
+      "h": 463,
+      "canvasW": 381,
+      "canvasH": 463,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_006",
+      "x": 614,
+      "y": 572,
+      "w": 332,
+      "h": 465,
+      "canvasW": 332,
+      "canvasH": 465,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_007",
+      "x": 1088,
+      "y": 571,
+      "w": 378,
+      "h": 466,
+      "canvasW": 378,
+      "canvasH": 466,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_008",
+      "x": 1503,
+      "y": 644,
+      "w": 497,
+      "h": 380,
+      "canvasW": 497,
+      "canvasH": 380,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_009",
+      "x": 125,
+      "y": 1075,
+      "w": 319,
+      "h": 457,
+      "canvasW": 319,
+      "canvasH": 457,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_010",
+      "x": 631,
+      "y": 1089,
+      "w": 326,
+      "h": 440,
+      "canvasW": 326,
+      "canvasH": 440,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_011",
+      "x": 1114,
+      "y": 1082,
+      "w": 352,
+      "h": 452,
+      "canvasW": 352,
+      "canvasH": 452,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_012",
+      "x": 1584,
+      "y": 1089,
+      "w": 349,
+      "h": 445,
+      "canvasW": 349,
+      "canvasH": 445,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_013",
+      "x": 114,
+      "y": 1568,
+      "w": 330,
+      "h": 434,
+      "canvasW": 330,
+      "canvasH": 434,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_014",
+      "x": 592,
+      "y": 1565,
+      "w": 389,
+      "h": 436,
+      "canvasW": 389,
+      "canvasH": 436,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_015",
+      "x": 1077,
+      "y": 1565,
+      "w": 389,
+      "h": 437,
+      "canvasW": 389,
+      "canvasH": 437,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "name": "Trove_Sprite_Atlas_016",
+      "x": 1555,
+      "y": 1573,
+      "w": 449,
+      "h": 426,
+      "canvasW": 449,
+      "canvasH": 426,
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ]
+}

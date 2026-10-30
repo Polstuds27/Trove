@@ -52,6 +52,33 @@ module.exports = {
           soft: "rgb(var(--color-info-soft) / <alpha-value>)",
         },
         overlay: "rgb(var(--color-overlay) / <alpha-value>)",
+        // Brand palette (direction contract): available for deliberate use;
+        // most surfaces should use the semantic names above.
+        forest: "rgb(var(--color-forest) / <alpha-value>)",
+        sage: {
+          DEFAULT: "rgb(var(--color-sage) / <alpha-value>)",
+          light: "rgb(var(--color-sage-light) / <alpha-value>)",
+        },
+        sand: "rgb(var(--color-sand) / <alpha-value>)",
+        peach: {
+          DEFAULT: "rgb(var(--color-peach) / <alpha-value>)",
+          deep: "rgb(var(--color-peach-deep) / <alpha-value>)",
+        },
+        cream: "rgb(var(--color-cream) / <alpha-value>)",
+        moss: "rgb(var(--color-moss) / <alpha-value>)",
+        clay: "rgb(var(--color-clay) / <alpha-value>)",
+        terracotta: "rgb(var(--color-terracotta) / <alpha-value>)",
+        amber: "rgb(var(--color-amber) / <alpha-value>)",
+        hero: "var(--hero-bg)",
+        progress: "rgb(var(--color-progress) / <alpha-value>)",
+        chart: {
+          1: "rgb(var(--color-chart-1) / <alpha-value>)",
+          2: "rgb(var(--color-chart-2) / <alpha-value>)",
+          3: "rgb(var(--color-chart-3) / <alpha-value>)",
+          4: "rgb(var(--color-chart-4) / <alpha-value>)",
+          5: "rgb(var(--color-chart-5) / <alpha-value>)",
+          6: "rgb(var(--color-chart-6) / <alpha-value>)",
+        },
       },
       boxShadow: {
         card: "var(--shadow-card)",
@@ -59,10 +86,12 @@ module.exports = {
         overlay: "var(--shadow-overlay)",
       },
       fontFamily: {
+        // Inter is the Trove typeface; system fonts remain as offline fallbacks.
         sans: [
           "Inter",
-          "system-ui",
           "-apple-system",
+          "system-ui",
+          "BlinkMacSystemFont",
           "Segoe UI",
           "Roboto",
           "Helvetica Neue",
@@ -81,6 +110,7 @@ module.exports = {
       borderRadius: {
         xl: "0.75rem",
         "2xl": "1rem",
+        "3xl": "1.25rem",
       },
       spacing: {
         "safe-b": "env(safe-area-inset-bottom, 0px)",
@@ -88,25 +118,76 @@ module.exports = {
       maxWidth: {
         app: "80rem",
       },
+      // Motion tokens live in src/index.css (--motion-*, --ease-*). Everything
+      // interactive uses these three speeds; long decorative motion is rare.
+      transitionDuration: {
+        fast: "var(--motion-fast)",
+        base: "var(--motion-base)",
+        slow: "var(--motion-slow)",
+        reveal: "var(--motion-reveal)",
+      },
       transitionTimingFunction: {
         smooth: "cubic-bezier(0.22, 1, 0.36, 1)",
+        "out-soft": "var(--ease-out-soft)",
+        "in-soft": "var(--ease-in-soft)",
+        "in-out-soft": "var(--ease-in-out-soft)",
       },
       keyframes: {
         "fade-in": {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        "fade-out": {
+          from: { opacity: "1" },
+          to: { opacity: "0" },
+        },
         "rise": {
           from: { opacity: "0", transform: "translateY(6px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "page-in": {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "panel-in": {
+          from: { opacity: "0", transform: "translateY(10px) scale(0.97)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "panel-out": {
+          from: { opacity: "1", transform: "translateY(0) scale(1)" },
+          to: { opacity: "0", transform: "translateY(6px) scale(0.985)" },
         },
         "slide-up": {
           from: { transform: "translateY(100%)" },
           to: { transform: "translateY(0)" },
         },
+        "slide-down": {
+          from: { transform: "translateY(0)" },
+          to: { transform: "translateY(100%)" },
+        },
         "slide-left": {
           from: { transform: "translateX(100%)" },
           to: { transform: "translateX(0)" },
+        },
+        "slide-right": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(100%)" },
+        },
+        "mascot-in": {
+          from: { opacity: "0", transform: "translateY(8px) scale(0.97)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "bar-grow": {
+          from: { transform: "scaleY(0)" },
+          to: { transform: "scaleY(1)" },
+        },
+        "progress-in": {
+          from: { transform: "scaleX(0)" },
+          to: { transform: "scaleX(1)" },
+        },
+        "toast-in": {
+          from: { opacity: "0", transform: "translateY(10px) scale(0.98)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         "spin-slow": {
           to: { transform: "rotate(360deg)" },
@@ -116,11 +197,25 @@ module.exports = {
           "50%": { opacity: "0.35" },
         },
       },
+      // Entrance animations use `backwards` fill, not `both`: once they finish,
+      // no transform is left behind. A lingering transform makes the element a
+      // containing block, which would re-anchor `position: fixed` dropdowns.
+      // Exits keep `both` because their final frame is the hidden state.
       animation: {
-        "fade-in": "fade-in 150ms ease-out",
-        rise: "rise 180ms cubic-bezier(0.22, 1, 0.36, 1)",
-        "slide-up": "slide-up 220ms cubic-bezier(0.22, 1, 0.36, 1)",
-        "slide-left": "slide-left 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "fade-in": "fade-in var(--motion-base) var(--ease-out-soft) backwards",
+        "fade-out": "fade-out var(--motion-fast) var(--ease-in-soft) both",
+        rise: "rise var(--motion-base) var(--ease-out-soft) backwards",
+        "page-in": "page-in var(--motion-base) var(--ease-out-soft) backwards",
+        "panel-in": "panel-in var(--motion-base) var(--ease-out-soft) backwards",
+        "panel-out": "panel-out var(--motion-fast) var(--ease-in-soft) both",
+        "slide-up": "slide-up var(--motion-slow) var(--ease-out-soft) backwards",
+        "slide-down": "slide-down var(--motion-base) var(--ease-in-soft) both",
+        "slide-left": "slide-left var(--motion-slow) var(--ease-out-soft) backwards",
+        "slide-right": "slide-right var(--motion-base) var(--ease-in-soft) both",
+        "mascot-in": "mascot-in var(--motion-slow) var(--ease-out-soft) backwards",
+        "bar-grow": "bar-grow var(--motion-reveal) var(--ease-out-soft) backwards",
+        "progress-in": "progress-in var(--motion-reveal) var(--ease-out-soft) backwards",
+        "toast-in": "toast-in var(--motion-base) var(--ease-out-soft) backwards",
         "spin-slow": "spin-slow 1.4s linear infinite",
         "pulse-dot": "pulse-dot 1.6s ease-in-out infinite",
       },

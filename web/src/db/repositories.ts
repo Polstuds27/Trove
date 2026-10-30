@@ -130,13 +130,14 @@ export async function getRow(entity: EntityName, id: string): Promise<LocalRow |
 /* ---------------------------------------------------------------- accounts */
 
 type AccountInput = Pick<LocalAccount, "name" | "type" | "currency" | "opening_balance"> &
-  Partial<Pick<LocalAccount, "credit_limit" | "statement_day" | "due_day" | "group_id">>;
+  Partial<Pick<LocalAccount, "bank_name" | "credit_limit" | "statement_day" | "due_day" | "group_id">>;
 
 export async function createAccount(input: AccountInput): Promise<LocalAccount> {
   const account: LocalAccount = {
     id: newId(),
     group_id: input.group_id ?? null,
     name: input.name,
+    bank_name: input.bank_name ?? null,
     type: input.type,
     currency: input.currency,
     opening_balance: input.opening_balance,
@@ -150,8 +151,10 @@ export async function createAccount(input: AccountInput): Promise<LocalAccount> 
     sync_status: "pending",
     ...stamp(),
   };
-  await db.accounts.add(account);
-  await enqueueMutation("accounts", account.id, "create", account, 0);
+  await db.transaction("rw", db.accounts, db.outbox, async () => {
+    await db.accounts.add(account);
+    await enqueueMutation("accounts", account.id, "create", account, 0);
+  });
   return account;
 }
 
@@ -159,13 +162,15 @@ export async function updateAccount(
   id: string,
   patch: Partial<LocalAccount>,
 ): Promise<LocalAccount | undefined> {
+  return db.transaction("rw", db.accounts, db.outbox, db.transactions, async () => {
   const existing = await db.accounts.get(id);
-  if (!existing) return undefined;
+  if (!existing || existing.deleted_at) throw new Error("This account is no longer available. Reopen the account list and try again.");
   const next: LocalAccount = edited(existing, patch);
   await db.accounts.put(next);
   if (patch.opening_balance !== undefined) await recalcBalances();
   await enqueueMutation("accounts", id, "update", next, existing.version);
   return next;
+  });
 }
 
 /**

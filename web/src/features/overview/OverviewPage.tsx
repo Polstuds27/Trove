@@ -1,57 +1,195 @@
 /**
- * Overview.
+ * Overview — the financial home.
  *
- * Answers, in order: how much money do I have, where did it go this month, what
- * happened recently, am I inside budget, what's coming. Progressive disclosure —
- * the summary is always visible, the detail is one tap away, and there are no
- * decorative dashboards (§13, §49).
+ * Desktop: glass hero, three figures, the current budget beside an insight
+ * panel, then recent activity. Mobile: the same story told in one column, with
+ * the income / expense / left-over trio compacted below the budget card.
+ *
+ * Everything here is derived from local data (`useLocalData`) so the screen is
+ * identical online and offline. No sample values.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowDownRight,
-  ArrowLeftRight,
-  ArrowUpRight,
-  CalendarDays,
   ChevronRight,
-  CreditCard,
-  Landmark,
   Plus,
-  Target,
-  Wallet,
 } from "lucide-react";
 import {
   Button,
-  Card,
-  CardHeader,
-  Divider,
   EmptyState,
+  GlassPanel,
   LinkButton,
+  Mascot,
+  MascotPanel,
   PageHeader,
   ProgressBar,
-  Stat,
+  SectionHeading,
+  Skeleton,
+  SurfaceCard,
 } from "../../components/ui";
-import { byTxNewest, formatMoney, formatMonth, formatPercent } from "../../design/format";
-import { ACCOUNT_TYPE_LABELS, accountIcon, categoryIcon } from "../../design/icons";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../db";
+import { PROFILE_KEY } from "../../db/profile";
+import { useAuth } from "../../auth/AuthContext";
+import {
+  byTxNewest,
+  formatMoney,
+  formatPercent,
+  formatRelativeDay,
+  daysBetween,
+} from "../../design/format";
+import { categoryIcon } from "../../design/icons";
+import type { LocalTransaction } from "../../db/types";
 import { useLocalData } from "../analytics/useLocalData";
 import { usePreferences } from "../settings/preferences";
 import {
   budgetProgress,
-  categoryBreakdown,
-  goalProgress,
   portfolio,
-  series,
   summarize,
-  upcoming,
+  type BudgetProgress,
+  type Lookups,
 } from "../analytics/engine";
-import { inRange, periodRange, rangeLabel, shiftPeriod, type Period } from "../analytics/period";
-import { TransactionRow } from "../transactions/TransactionList";
+import { inRange, periodRange, type Period } from "../analytics/period";import { transactionAccounts, transactionTitle } from "../transactions/TransactionList";
+
+function greetingCopy() {
+  const hour = typeof window !== "undefined" ? new Date().getHours() : 9;
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function longDate() {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function signedPercent(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return null;
+  return `${value >= 0 ? "+" : "−"}${formatPercent(Math.abs(value), 1)}`;
+}
+
+/** A single recent row: payee, category · day, account column, amount. */
+function OverviewRow({
+  transaction,
+  lookups,
+  currency,
+}: {
+  transaction: LocalTransaction;
+  lookups: Lookups;
+  currency: string;
+}) {
+  const title = transactionTitle(transaction, lookups);
+  const categoryObj = transaction.category_id ? lookups.category.get(transaction.category_id) : null;
+  const category = categoryObj?.name ?? null;
+  const meta = [category ?? (transaction.type === "income" ? "Income" : "Expense"), formatRelativeDay(transaction.date)]
+    .filter(Boolean)
+    .join(" · ");
+  const amount = formatMoney(Math.abs(transaction.amount), transaction.currency);
+  const tone =
+    transaction.type === "income"
+      ? "text-income"
+      : transaction.type === "expense"
+        ? "text-expense"
+        : "text-transfer";
+  const sign = transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : "";
+  const Icon = categoryIcon(categoryObj?.icon ?? null, categoryObj?.name);
+
+  return (
+    <Link
+      to={`/transactions/${transaction.id}`}
+      className="trove-row group"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-semibold leading-5 text-ink group-hover:text-primary">
+          {title}
+        </span>
+        <span className="mt-0.5 block truncate text-[13px] leading-[18px] text-muted">{meta}</span>
+      </span>
+      <span className="hidden w-[9.5rem] shrink-0 truncate text-[13px] text-muted lg:block">
+        {transactionAccounts(transaction, lookups)}
+      </span>
+      <span className={`tabular shrink-0 text-right text-[14px] font-semibold ${tone}`}>
+        {sign}
+        {amount}
+        {transaction.currency !== currency && (
+          <span className="mt-0.5 block text-[11px] font-normal text-faint">
+            ≈{formatMoney(Math.abs(transaction.amount), currency, { compact: true })}
+          </span>
+        )}
+      </span>
+    </Link>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  tone = "text-primary",
+}: {
+  label: string;
+  value: ReactNode;
+  tone?: string;
+}) {
+  return (
+    <SurfaceCard className="px-3.5 py-3">
+      <p className="text-[11px] font-medium text-muted">{label}</p>
+      <p className={`tabular mt-1 truncate text-[17px] font-bold leading-none tracking-[-0.02em] ${tone}`}>
+        {value}
+      </p>
+    </SurfaceCard>
+  );
+}
+
+function BudgetRow({ item, currency }: { item: BudgetProgress; currency: string }) {
+  const urgent = item.percent >= 90;
+  const limit = item.spent + item.remaining;
+  return (
+    <li className="py-3.5 first:pt-0 last:pb-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0 truncate text-[15px] font-semibold text-ink">
+          {item.categoryName ?? "All spending"}
+        </span>
+        <span className="tabular shrink-0 text-[12px] text-muted">
+          {formatMoney(item.spent, currency, { compact: true })}{" "}
+          <span className="text-faint">of</span> {formatMoney(limit, currency, { compact: true })}
+        </span>
+      </div>
+      <div className="mt-2 flex items-center gap-3">
+        <ProgressBar
+          value={item.percent}
+          tone={item.overBudget || urgent ? "expense" : "primary"}
+          size="sm"
+          className="flex-1"
+          label={`${item.categoryName ?? "All spending"} budget usage`}
+        />
+        <span
+          className={`tabular w-[4.75rem] shrink-0 text-right text-[12px] font-semibold ${
+            item.overBudget || urgent ? "text-expense" : "text-muted"
+          }`}
+        >
+          {item.overBudget
+            ? `${formatMoney(Math.abs(item.remaining), currency, { compact: true })} over`
+            : `${formatMoney(item.remaining, currency, { compact: true })} left`}
+        </span>
+      </div>
+    </li>
+  );
+}
 
 export function OverviewPage() {
   const { lookups, dataset, ready } = useLocalData();
   const { preferences } = usePreferences();
+  const { profile, email } = useAuth();
+  const cached = useLiveQuery(() => db.profile.get(PROFILE_KEY), []);
   const navigate = useNavigate();
-  const [anchor, setAnchor] = useState(() => new Date());
+  const [anchor] = useState(() => new Date());
   const currency = dataset.baseCurrency;
 
   const period: Period = useMemo(
@@ -59,547 +197,416 @@ export function OverviewPage() {
     [anchor, preferences.monthStartDay],
   );
   const range = periodRange(period);
-  const previousPeriod = useMemo(
-    () => shiftPeriod(period, -1),
-    [period],
-  );
-  const previousRange = periodRange(previousPeriod);
 
   const totals = useMemo(() => portfolio(lookups), [lookups]);
-  const month = useMemo(() => summarize(dataset.transactions, range, lookups.fx), [dataset.transactions, range, lookups.fx]);
-  const previous = useMemo(
-    () => summarize(dataset.transactions, previousRange, lookups.fx),
-    [dataset.transactions, previousRange, lookups.fx],
+  const month = useMemo(
+    () => summarize(dataset.transactions, range, lookups.fx),
+    [dataset.transactions, range, lookups.fx],
   );
-  const trend = useMemo(() => series(dataset.transactions, period, lookups, 12), [dataset.transactions, period, lookups]);
+
   const budgets = useMemo(
     () => budgetProgress(dataset.budgets, dataset.transactions, lookups, anchor, preferences.monthStartDay),
     [dataset.budgets, dataset.transactions, lookups, anchor, preferences.monthStartDay],
   );
-  const bills = useMemo(() => upcoming(lookups, 30), [lookups]);
-  const goals = useMemo(
-    () => goalProgress(dataset.goals, dataset.transactions, lookups),
-    [dataset.goals, dataset.transactions, lookups],
-  );
-  const breakdown = useMemo(
-    () => categoryBreakdown(dataset.transactions, range, lookups, "expense", 5),
-    [dataset.transactions, range, lookups],
-  );
 
   const recent = useMemo(
-    // Scoped to the viewed month: on "November 2026" this lists November's
-    // latest six, not the six latest overall.
-    () => dataset.transactions.filter((tx) => inRange(tx.date, range)).sort(byTxNewest).slice(0, 6),
+    () => dataset.transactions.filter((tx) => inRange(tx.date, range)).sort(byTxNewest).slice(0, 4),
     [dataset.transactions, range],
   );
 
-  const accounts = useMemo(
-    () => dataset.accounts.filter((a) => !a.archived),
-    [dataset.accounts],
+  const sortedBudgets = useMemo(
+    () => [...budgets].sort((a, b) => b.percent - a.percent),
+    [budgets],
   );
-  const creditCards = useMemo(
-    () => accounts.filter((a) => a.type === "credit" || a.type === "debit"),
-    [accounts],
-  );
-  const cashAccounts = useMemo(
-    () => accounts.filter((a) => a.type !== "credit" && a.type !== "loan"),
-    [accounts],
-  );
+  const attention = sortedBudgets.find((item) => item.overBudget) ?? sortedBudgets.find((item) => item.percent >= 90) ?? sortedBudgets.find((item) => item.alert) ?? null;
 
-  const expenseDelta = previous.expense > 0 ? ((month.expense - previous.expense) / previous.expense) * 100 : null;
-  const incomeDelta = previous.income > 0 ? ((month.income - previous.income) / previous.income) * 100 : null;
+  const overallLimit = budgets.reduce((sum, item) => sum + item.spent + item.remaining, 0);
+  const overallSpent = budgets.reduce((sum, item) => sum + item.spent, 0);
+  const overallPercent = overallLimit > 0 ? (overallSpent / overallLimit) * 100 : 0;
+  const overallLeft = overallLimit - overallSpent;
 
-  if (ready && accounts.length === 0) {
+  const daysLeft = range ? Math.max(0, daysBetween(new Date(), range.end)) : 0;
+  const monthName = anchor.toLocaleDateString(undefined, { month: "long" });
+
+  const priorBalance = totals.assets - month.cashFlow;
+  const balanceDelta = priorBalance > 0 ? (month.cashFlow / priorBalance) * 100 : null;
+  const deltaText = signedPercent(balanceDelta);
+
+  const firstName =
+    profile?.first_name?.trim() || cached?.first_name?.trim() || email?.split("@")[0] || "";
+  const greeting = greetingCopy();
+  const today = longDate();
+
+  if (!ready) {
     return (
-      <>
-        <PageHeader title="Overview" subtitle="Your financial home" className="mb-2"/>
-        <Card>
+      <div className="space-y-5 lg:space-y-[18px]">
+        <PageHeader title="Overview" subtitle={today} />
+        <Skeleton className="h-[190px] w-full rounded-[28px] lg:h-[330px]" />
+        <div className="grid grid-cols-3 gap-3 lg:gap-[17px]">
+          {[0, 1, 2].map((index) => (
+            <Skeleton key={index} className="h-[86px] rounded-[22px] lg:h-[96px]" />
+          ))}
+        </div>
+        <div className="grid gap-[17px] lg:grid-cols-3">
+          <Skeleton className="h-[280px] rounded-[24px] lg:col-span-2" />
+          <Skeleton className="h-[280px] rounded-[24px]" />
+        </div>
+        <Skeleton className="h-[260px] rounded-[24px]" />
+      </div>
+    );
+  }
+
+  if (dataset.accounts.length === 0) {
+    return (
+      <div>
+        <PageHeader title="Overview" subtitle={today} />
+        <GlassPanel className="mt-6 px-6 py-12">
           <EmptyState
-            icon={<Wallet className="h-7 w-7" />}
+            state="accountsEmpty"
             title="Let's get your accounts in"
-            description="Start by adding the cash, bank and card accounts you actually use. Everything else — budgets, goals, reports — builds on top of them."
+            description="Add the cash, bank and card accounts you actually use. Budgets, goals and reports build on top of them."
             action={
               <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/accounts/new")}>
                 Add your first account
               </Button>
             }
-            secondaryAction={
-              <LinkButton to="/settings">Set your base currency</LinkButton>
-            }
+            secondaryAction={<LinkButton to="/settings/currency">Set your base currency</LinkButton>}
           />
-        </Card>
-      </>
+        </GlassPanel>
+      </div>
     );
   }
 
+  const recentList = () => {
+    if (recent.length === 0) {
+      return (
+        <EmptyState
+          compact
+          state="transactionsEmpty"
+          title="No transactions this month"
+          description="Record an expense, income or transfer — it works offline too."
+          action={
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => navigate("/transactions?add=expense")}
+            >
+              Add transaction
+            </Button>
+          }
+        />
+      );
+    }
+    return (
+      <div className="trove-hairline-list">
+        {recent.map((tx) => (
+          <OverviewRow key={tx.id} transaction={tx} lookups={lookups} currency={currency} />
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4">
+    <div>
       <PageHeader
         title="Overview"
-        period={<span className="text-sm text-muted">{formatMonth(anchor)}</span>}
+        subtitle={today}
+        mobileTitle={firstName ? `${greeting}, ${firstName}` : greeting}
+        mobileSubtitle={today}
         actions={
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setAnchor((prev) => shiftPeriod({ kind: "month", anchor: prev, monthStartDay: preferences.monthStartDay }, -1).anchor)}
-            >
-              Prev
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setAnchor((prev) => shiftPeriod({ kind: "month", anchor: prev, monthStartDay: preferences.monthStartDay }, 1).anchor)}
-            >
-              Next
-            </Button>
-            <Button variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/transactions?add=expense")}>
-              Add
-            </Button>
-          </>
+          <Button
+            variant="primary"
+            icon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate("/transactions?add=expense")}
+          >
+            Add transaction
+          </Button>
         }
       />
 
-      {/* 1. How much money do I have. */}
-      <Card className="overflow-hidden">
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted uppercase">
-            <Wallet aria-hidden="true" className="h-3.5 w-3.5" />
-            Total balance
-          </div>
-          <p className="tabular mt-1 text-display-lg leading-none font-semibold text-ink">
-            {formatMoney(totals.assets, currency)}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-            <span className="tabular">
-              {totals.liabilities !== 0 && (
-                <>
-                  {formatMoney(totals.liabilities, currency)} owed ·{" "}
-                </>
-              )}
-              Net worth <span className="font-semibold text-ink-soft">{formatMoney(totals.netWorth, currency)}</span>
-            </span>
-            {totals.creditAvailable !== null && (
-              <span className="tabular">
-                {formatMoney(totals.creditAvailable, currency)} credit available
-              </span>
+      {/* ------------------------------------------------------------- mobile */}
+      <div className="mx-auto mt-5 max-w-[640px] space-y-4 pb-2 lg:hidden">
+        {/* Deep-forest balance hero. */}
+        <section className="relative overflow-hidden rounded-[28px] bg-[#1f2f26] px-5 py-5 shadow-card dark:border dark:border-[#2d4136]">
+          <div className="relative z-10 max-w-[62%]">
+            <p className="text-[12px] text-white/60">Total balance</p>
+            <p className="tabular mt-1.5 text-[34px] font-bold leading-none tracking-[-0.035em] text-[#f4eedf]">
+              {formatMoney(totals.assets, currency)}
+            </p>
+            {deltaText && (
+              <p className={`mt-2 text-[12px] font-semibold ${balanceDelta !== null && balanceDelta >= 0 ? "text-[#9bb587]" : "text-[#e39a74]"}`}>
+                {deltaText} <span className="font-normal text-white/50">vs. last month</span>
+              </p>
             )}
           </div>
-        </div>
-
-        <Divider />
-
-        {/* 2. Where did it go this month. */}
-        <div className="grid grid-cols-3 divide-x divide-line">
-          <div className="px-3 py-3 sm:px-4">
-            <Stat
-              label="Income"
-              tone="income"
-              value={formatMoney(month.income, currency)}
-              caption={
-                incomeDelta !== null
-                  ? `${incomeDelta >= 0 ? "↑" : "↓"} ${formatPercent(Math.abs(incomeDelta))} vs last month`
-                  : undefined
-              }
-              icon={<ArrowUpRight className="h-3.5 w-3.5" />}
-            />
+          <div className="absolute bottom-0 right-3">
+            <Mascot state="greeting" size={120} />
           </div>
-          <div className="px-3 py-3 sm:px-4">
-            <Stat
-              label="Expenses"
-              tone="expense"
-              value={formatMoney(month.expense, currency)}
-              caption={
-                expenseDelta !== null
-                  ? `${expenseDelta >= 0 ? "↑" : "↓"} ${formatPercent(Math.abs(expenseDelta))} vs last month`
-                  : undefined
-              }
-              icon={<ArrowDownRight className="h-3.5 w-3.5" />}
-            />
-          </div>
-          <div className="px-3 py-3 sm:px-4">
-            <Stat
-              label="Cash flow"
-              tone={month.cashFlow >= 0 ? "income" : "expense"}
-              value={formatMoney(month.cashFlow, currency, { signed: true })}
-              caption={`${month.transactionCount} transactions`}
-              icon={<ArrowLeftRight className="h-3.5 w-3.5" />}
-            />
-          </div>
-        </div>
+        </section>
 
-        {trend.length > 1 && month.expense > 0 && (
-          <>
-            <Divider />
-            <div className="px-4 py-3">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-ink">Spending trend</p>
-                <LinkButton to="/statistics">Full report</LinkButton>
-              </div>
-              <div className="flex h-16 items-end gap-1" role="img" aria-label={`Monthly spending for ${formatMonth(anchor)}`}>
-                {trend.map((point) => {
-                  const max = Math.max(1, ...trend.map((p) => p.expense));
-                  const height = (point.expense / max) * 100;
-                  return (
-                    <div key={point.key} className="group relative flex-1">
-                      <div
-                        className="rounded-t-sm bg-primary/70 transition-colors group-hover:bg-primary"
-                        style={{ height: `${Math.max(3, height)}%` }}
-                        title={`${point.label}: ${formatMoney(point.expense, currency)}`}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-1 flex justify-between text-[10px] text-faint">
-                <span>{trend[0]?.label}</span>
-                <span>{trend[trend.length - 1]?.label}</span>
+        {/* Insight card — tone and mascot follow budget state. */}
+        {budgets.length > 0 &&
+          (attention ? (
+            <div className="flex items-center gap-3.5 rounded-[24px] border border-warning/40 bg-warning-soft px-4 py-3.5">
+              <Mascot state="budgetWarning" size={72} className="-my-2 -ml-1" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-5 text-ink">
+                  {attention.categoryName ?? "A budget"} is{" "}
+                  {attention.overBudget ? "over budget." : "nearly at its limit."}
+                </p>
+                <p className="mt-0.5 text-[12.5px] leading-[18px] text-ink-soft">
+                  {attention.overBudget
+                    ? `${formatMoney(Math.abs(attention.remaining), currency)} over this month.`
+                    : `${formatMoney(Math.max(0, attention.remaining), currency)} left this month, just a heads-up.`}{" "}
+                  <Link to="/budgets" className="font-semibold text-warning hover:underline">
+                    Review
+                  </Link>
+                </p>
               </div>
             </div>
-          </>
-        )}
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          {/* 3. Recent activity. */}
-          <Card>
-            <CardHeader
-              title="Recent transactions"
-              subtitle={recent.length > 0 ? `${rangeLabel(range, "month")}` : undefined}
-              icon={<ArrowLeftRight className="h-4 w-4" />}
-              action={
-                <LinkButton to="/transactions">
-                  View all <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-                </LinkButton>
-              }
-            />
-            {recent.length === 0 ? (
-              <EmptyState
-                compact
-                icon={<ArrowLeftRight className="h-6 w-6" />}
-                title="No transactions yet"
-                description="Record your first expense, income or transfer — it works offline too."
-                action={
-                  <Button variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/transactions?add=expense")}>
-                    Add transaction
-                  </Button>
-                }
-              />
-            ) : (
-              <div className="divide-y divide-line">
-                {recent.map((tx) => (
-                  <TransactionRow key={tx.id} transaction={tx} lookups={lookups} showCategory />
-                ))}
+          ) : (
+            <div className="flex items-center gap-3.5 rounded-[24px] border border-line/60 bg-surface px-4 py-3.5">
+              <Mascot state="budgetOnTrack" size={72} className="-my-2 -ml-1" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-5 text-ink">You're on track this month.</p>
+                <p className="mt-0.5 text-[12.5px] leading-[18px] text-ink-soft">
+                  Every budget is inside its limit. Keep it up.
+                </p>
               </div>
-            )}
-          </Card>
+            </div>
+          ))}
 
-          {/* 4. Accounts at a glance. */}
-          <Card>
-            <CardHeader
-              title="Accounts"
-              subtitle={`${accounts.length} active`}
-              icon={<Wallet className="h-4 w-4" />}
-              action={
-                <LinkButton to="/accounts">
-                  Manage <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-                </LinkButton>
-              }
-            />
-            {cashAccounts.length === 0 ? (
-              <EmptyState
-                compact
-                icon={<Wallet className="h-6 w-6" />}
-                title="No accounts yet"
-                description="Add your cash, bank or e-wallet accounts to see balances here."
-                action={
-                  <Button variant="secondary" size="sm" onClick={() => navigate("/accounts/new")}>
-                    Add account
-                  </Button>
-                }
-              />
-            ) : (
-              <ul className="divide-y divide-line">
-                {cashAccounts.slice(0, 6).map((account) => {
-                  const Icon = accountIcon(account.type);
-                  return (
-                    <li key={account.id}>
-                      <Link to={`/accounts/${account.id}`} className="row-link flex items-center gap-3 px-4 py-2.5">
-                        <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-ink-soft">
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-ink">{account.name}</span>
-                          <span className="block truncate text-xs text-muted">
-                            {ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · {account.currency}
-                          </span>
-                        </span>
-                        <span className="tabular shrink-0 text-sm font-semibold text-ink">
-                          {formatMoney(account.current_balance, account.currency)}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {creditCards.length > 0 && (
-            <>
-              <Divider label="Credit" />
-
-              <ul className="divide-y divide-line pb-2">
-                {creditCards.map((account) => {
-                  const used = Math.max(0, -(account.current_balance ?? 0));
-                  const limit = Math.max(0, account.credit_limit ?? 0);
-
-                  const hasCreditLimit = limit > 0;
-                  const pct = hasCreditLimit
-                    ? Math.min(100, (used / limit) * 100)
-                    : 0;
-
-                  return (
-                    <li key={account.id}>
-                      <Link
-                        to={`/accounts/${account.id}`}
-                        className="row-link flex items-center gap-3 px-4 py-2.5"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            aria-hidden="true"
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft-bg text-primary"
-                          >
-                            <CreditCard className="h-4 w-4" />
-                          </span>
-
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-ink">
-                              {account.name}
-                            </span>
-
-                            {hasCreditLimit ? (
-                              <span className="tabular block truncate text-xs text-muted">
-                                {formatMoney(used, account.currency)} of{" "}
-                                {formatMoney(limit, account.currency)} used
-                              </span>
-                            ) : (
-                              <span className="block truncate text-xs text-muted">
-                                No credit limit set
-                              </span>
-                            )}
-                          </span>
-
-                          {hasCreditLimit && (
-                            <span
-                              className={`tabular shrink-0 text-sm font-semibold ${
-                                pct > 80 ? "text-warning" : "text-ink"
-                              }`}
-                            >
-                              {formatPercent(pct)}
-                            </span>
-                          )}
-                        </div>
-
-                        {hasCreditLimit && (
-                          <ProgressBar
-                            value={pct}
-                            size="sm"
-                            className="mt-2"
-                            tone={pct > 80 ? "warning" : "primary"}
-                            label={`${account.name} credit utilization`}
-                          />
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
-          </Card>
+        {/* Compact income / expenses / left over. */}
+        <div className="grid grid-cols-3 gap-3">
+          <MiniStat
+            label="Income"
+            value={formatMoney(month.income, currency, { compact: true })}
+            tone="text-income"
+          />
+          <MiniStat
+            label="Expenses"
+            value={formatMoney(month.expense, currency, { compact: true })}
+            tone="text-expense"
+          />
+          <MiniStat
+            label="Left over"
+            value={formatMoney(month.cashFlow, currency, { compact: true, signed: true })}
+            tone={month.cashFlow >= 0 ? "text-income" : "text-expense"}
+          />
         </div>
 
-        <div className="space-y-4">
-          {/* 5. Am I inside budget. */}
-          <Card>
-            <CardHeader
-              title="Budget"
-              subtitle={budgets.length > 0 ? `${budgets.filter((b) => b.overBudget).length} over` : "Not set up"}
-              icon={<ArrowDownRight className="h-4 w-4" />}
-              action={
-                <LinkButton to="/budgets">
-                  Open <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-                </LinkButton>
-              }
-            />
+        {/* Recent. */}
+        <section>
+          <SectionHeading
+            title="Recent"
+            className="mb-2 px-1"
+            action={<LinkButton to="/transactions">See all</LinkButton>}
+          />
+          <SurfaceCard className="overflow-hidden">{recentList()}</SurfaceCard>
+        </section>
+
+        {/* Budget snapshot. */}
+        <section>
+          <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+            <h2 className="text-[16px] font-semibold text-ink">{monthName} budget</h2>
+            <span className="text-[12px] text-muted">
+              {budgets.length > 0 ? `${daysLeft} days left` : "Not set up"}
+            </span>
+          </div>
+          <SurfaceCard className="px-5 py-4">
             {budgets.length === 0 ? (
               <EmptyState
                 compact
-                icon={<ArrowDownRight className="h-6 w-6" />}
+                state="budgetOnTrack"
                 title="No budgets yet"
-                description="Set a monthly limit per category and FinTrack will track it for you."
+                description="Set a monthly limit per category and Trove will track it for you."
                 action={
-                  <Button variant="secondary" size="sm" onClick={() => navigate("/budgets?new=1")}>
+                  <Button variant="secondary" size="sm" onClick={() => navigate("/budgets/new")}>
                     Create budget
                   </Button>
                 }
               />
             ) : (
-              <ul className="divide-y divide-line">
-                {budgets.slice(0, 5).map((item) => (
-                  <li key={item.budget.id} className="px-4 py-3">
-                    <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                      <span className="min-w-0 truncate text-sm font-medium text-ink">
-                        {item.categoryName ?? "All spending"}
-                      </span>
-                      <span className="tabular shrink-0 text-xs text-muted">
-                        {formatMoney(item.spent, currency, { compact: true })} / {formatMoney(item.budget.amount, currency, { compact: true })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ProgressBar
-                        value={item.percent}
-                        size="sm"
-                        tone={item.overBudget ? "expense" : item.alert ? "warning" : "primary"}
-                        className="flex-1"
-                        label={`${item.categoryName ?? "All spending"} budget usage`}
-                      />
-                      <span className={`tabular w-9 shrink-0 text-right text-xs font-semibold ${item.overBudget ? "text-expense" : item.alert ? "text-warning" : "text-ink-soft"}`}>
-                        {formatPercent(item.percent)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="tabular text-[32px] font-bold leading-none tracking-[-0.03em] text-primary">
+                    {formatMoney(overallSpent, currency)}
+                  </span>
+                  <span className="text-[12px] text-muted">of {formatMoney(overallLimit, currency)}</span>
+                </div>
+                <ProgressBar
+                  value={overallPercent}
+                  tone={overallPercent > 100 || overallPercent >= 90 ? "expense" : "primary"}
+                  className="mt-3"
+                  label={`${monthName} overall budget usage`}
+                />
+                <div className="mt-2.5 flex items-center justify-between gap-3">
+                  <span className={`text-[12px] font-semibold ${overallLeft < 0 ? "text-expense" : "text-income"}`}>
+                    {overallLeft >= 0
+                      ? `${formatMoney(overallLeft, currency)} left overall`
+                      : `${formatMoney(Math.abs(overallLeft), currency)} over overall`}
+                  </span>
+                  <Link to="/budgets" className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-primary">
+                    View budget <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </>
             )}
-          </Card>
+          </SurfaceCard>
+        </section>
+      </div>
 
-          {/* 6. What's coming. */}
-          <Card>
-            <CardHeader
-              title="Upcoming"
-              subtitle="Next 30 days"
-              icon={<CalendarDays className="h-4 w-4" />}
-              action={
-                <LinkButton to="/calendar">
-                  Calendar <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-                </LinkButton>
-              }
-            />
-            {bills.length === 0 ? (
+      {/* ------------------------------------------------------------ desktop */}
+      <div className="hidden space-y-[18px] lg:block">
+        <GlassPanel className="relative min-h-[300px] overflow-hidden p-8 xl:p-10">
+          <div className="relative z-10 flex min-h-[220px] max-w-[58%] flex-col justify-center">
+            <h2 className="text-[30px] font-semibold leading-[36px] tracking-[-0.03em] text-primary">
+              {greeting}!
+            </h2>
+            <p className="mt-1.5 text-[14px] leading-6 text-muted">
+              Here's how your money is doing this month.
+            </p>
+            <p className="mt-8 text-[12px] font-medium text-muted">Total balance</p>
+            <p className="trove-hero-amount mt-1">{formatMoney(totals.assets, currency)}</p>
+            {deltaText && (
+              <p className={`mt-2.5 text-[12px] font-semibold ${balanceDelta !== null && balanceDelta >= 0 ? "text-income" : "text-expense"}`}>
+                {deltaText} <span className="font-normal text-muted">vs. last month</span>
+              </p>
+            )}
+          </div>
+          <div className="pointer-events-none absolute bottom-0 right-7 hidden h-[184px] w-[184px] items-end justify-center dark:flex">
+            <Mascot state="greeting" size={196} />
+          </div>
+          <div className="pointer-events-none absolute bottom-0 right-10 dark:hidden">
+            <Mascot state="greeting" size={204} />
+          </div>
+        </GlassPanel>
+
+        <div className="grid grid-cols-3 gap-[17px]">
+          {[
+            { label: "Income", value: formatMoney(month.income, currency), tone: "text-primary" },
+            { label: "Expenses", value: formatMoney(month.expense, currency), tone: "text-primary" },
+            {
+              label: "Left over",
+              value: formatMoney(month.cashFlow, currency, { signed: true }),
+              tone: month.cashFlow >= 0 ? "text-income" : "text-expense",
+            },
+          ].map((item) => (
+            <SurfaceCard key={item.label} className="px-6 py-5">
+              <p className="text-[13px] text-muted">{item.label}</p>
+              <p className={`tabular mt-2 text-[30px] font-bold leading-none tracking-[-0.03em] ${item.tone}`}>
+                {item.value}
+              </p>
+            </SurfaceCard>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-3 gap-[17px]">
+          <SurfaceCard className="col-span-2 p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-[17px] font-semibold leading-6 text-ink">{monthName} budget</h2>
+                <p className="mt-0.5 text-[12px] text-muted">
+                  {daysLeft} days left
+                </p>
+              </div>
+            </div>
+
+            {budgets.length === 0 ? (
               <EmptyState
                 compact
-                icon={<CalendarDays className="h-6 w-6" />}
-                title="Nothing scheduled"
-                description="Recurring payments, installments and goal deadlines will show up here."
+                state="budgetOnTrack"
+                title="No budgets yet"
+                description="Set a monthly limit per category and Trove will track it for you."
                 action={
-                  <Button variant="secondary" size="sm" onClick={() => navigate("/recurring?new=1")}>
-                    Add recurring
+                  <Button variant="secondary" size="sm" onClick={() => navigate("/budgets/new")}>
+                    Create budget
                   </Button>
                 }
               />
             ) : (
-              <ul className="divide-y divide-line">
-                {bills.slice(0, 5).map((item) => (
-                  <li key={item.key} className="flex items-center gap-3 px-4 py-2.5">
-                    <span
-                      aria-hidden="true"
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                        item.tone === "income" ? "bg-income-soft text-income" : item.tone === "expense" ? "bg-expense-soft text-expense" : "bg-surface-sunken text-ink-soft"
-                      }`}
-                    >
-                      {item.kind === "goal" ? <Target className="h-4 w-4" /> : item.kind === "debt" ? <Landmark className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-ink">{item.title}</span>
-                      <span className="block truncate text-xs text-muted">
-                        {item.inDays === 0 ? "Today" : item.inDays === 1 ? "Tomorrow" : `In ${item.inDays} days`}
-                      </span>
-                    </span>
-                    <span className={`tabular shrink-0 text-sm font-semibold ${item.tone === "income" ? "text-income" : item.tone === "expense" ? "text-expense" : "text-transfer"}`}>
-                      {formatMoney(item.amount, currency, { compact: true })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <div className="mt-4 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                  <span className="tabular text-[40px] font-bold leading-none tracking-[-0.035em] text-primary">
+                    {formatMoney(overallSpent, currency)}
+                  </span>
+                  <span className="text-[13px] text-muted">of {formatMoney(overallLimit, currency)}</span>
+                </div>
+                <ProgressBar
+                  value={overallPercent}
+                  tone={overallPercent > 100 || overallPercent >= 90 ? "expense" : "primary"}
+                  className="mt-4"
+                  label={`${monthName} overall budget usage`}
+                />
+                {overallLeft < 0 && (
+                  <p className="mt-2 text-[12px] font-semibold text-expense">
+                    {formatMoney(Math.abs(overallLeft), currency)} over budget overall
+                  </p>
+                )}
+
+                <ul className="mt-5 divide-y divide-line/70 border-t border-line/70 pt-3.5">
+                  {sortedBudgets.slice(0, 3).map((item) => (
+                    <BudgetRow key={item.budget.id} item={item} currency={currency} />
+                  ))}
+                </ul>
+
+                <p className="mt-4 text-[12.5px] leading-5 text-muted">
+                  {attention ? (
+                    <>
+                      {attention.categoryName ?? "A budget"} is{" "}
+                      {attention.overBudget ? "over budget" : "nearly at its limit"}
+                      {attention.overBudget
+                        ? ` by ${formatMoney(Math.abs(attention.remaining), currency)}.`
+                        : `, with ${formatMoney(Math.max(0, attention.remaining), currency)} left.`}
+                    </>
+                  ) : (
+                    <>
+                      You have <span className="font-semibold text-income">{formatMoney(Math.max(0, overallLeft), currency)}</span>{" "}
+                      left across your budgets this month.
+                    </>
+                  )}
+                  <LinkButton to="/budgets" className="ml-2 align-baseline text-[12px]">
+                    View budget <ChevronRight className="inline h-3.5 w-3.5" />
+                  </LinkButton>
+                </p>
+              </>
             )}
-          </Card>
+          </SurfaceCard>
 
-          {/* 7. Where the money went, at a glance. */}
-          {breakdown.length > 0 && (
-            <Card>
-              <CardHeader
-                title="Top spending"
-                subtitle={formatMonth(anchor)}
-                icon={<ArrowDownRight className="h-4 w-4" />}
-                action={
-                  <LinkButton to="/statistics">
-                    Analyse <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-                  </LinkButton>
-                }
-              />
-              <ul className="divide-y divide-line">
-                {breakdown.map((slice) => {
-                  const Icon = categoryIcon(slice.icon, slice.name);
-                  return (
-                    <li key={slice.id} className="flex items-center gap-3 px-4 py-2.5">
-                      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-ink-soft">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-ink">{slice.name}</span>
-                        <span className="tabular block text-xs text-muted">{formatPercent(slice.share)} of spend</span>
-                      </span>
-                      <span className="tabular shrink-0 text-sm font-semibold text-expense">
-                        −{formatMoney(slice.value, currency, { compact: true })}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </Card>
-          )}
-
-          {/* Goals nudge — only when there is something to nudge about. */}
-          {goals.length > 0 && (
-            <Card>
-              <CardHeader
-                title="Savings goals"
-                icon={<Target className="h-4 w-4" />}
-                action={
-                  <LinkButton to="/goals">
-                    Open <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-                  </LinkButton>
-                }
-              />
-              <ul className="divide-y divide-line">
-                {goals.slice(0, 3).map((item) => (
-                  <li key={item.goal.id} className="px-4 py-3">
-                    <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                      <span className="truncate text-sm font-medium text-ink">{item.goal.name}</span>
-                      <span className="tabular shrink-0 text-xs text-muted">
-                        {formatMoney(item.saved, currency, { compact: true })} /{" "}
-                        {formatMoney(item.target, currency, { compact: true })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ProgressBar
-                        value={item.percent}
-                        size="sm"
-                        tone={item.percent >= 100 ? "income" : "primary"}
-                        className="flex-1"
-                        label={`${item.goal.name} progress`}
-                      />
-                      <span className="tabular w-9 shrink-0 text-right text-xs font-semibold text-ink-soft">
-                        {formatPercent(item.percent)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
+          <MascotPanel
+            state={month.cashFlow >= 0 ? "piggyBank" : "budgetWarning"}
+            tone={month.cashFlow >= 0 ? "peach" : "sage"}
+            title={
+              month.cashFlow >= 0
+                ? "More came in than went out this month"
+                : "Spending outpaced income this month"
+            }
+            value={formatMoney(month.cashFlow, currency, { signed: true })}
+            description={
+              month.cashFlow >= 0
+                ? `Left over from ${formatMoney(month.income, currency)} of income.`
+                : "A small adjustment now keeps the month on track."
+            }
+            mascotSize={150}
+            className="h-full"
+          />
         </div>
+
+        <SurfaceCard className="overflow-hidden">
+          <div className="flex items-center justify-between gap-4 border-b border-line/75 px-6 py-5">
+            <div>
+              <h2 className="text-[16px] font-semibold leading-6 text-ink">Recent transactions</h2>
+              <p className="text-[12px] text-muted">
+                {month.transactionCount} this month
+              </p>
+            </div>
+            <LinkButton to="/transactions">
+              See all <ChevronRight className="h-3.5 w-3.5" />
+            </LinkButton>
+          </div>
+          {recentList()}
+        </SurfaceCard>
       </div>
     </div>
   );

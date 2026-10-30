@@ -11,6 +11,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import type { LocalAccount } from "../../db/types";
 import { db } from "../../db";
 import { CURRENCIES } from "../../design/format";
+import { BANKS, bankByName } from "../../design/banks";
+import { AccountAvatar } from "./AccountAvatar";
 import {
   AmountInput,
   Button,
@@ -45,6 +47,7 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
   const editing = Boolean(account);
 
   const [name, setName] = useState(account?.name ?? "");
+  const [bankName, setBankName] = useState(bankByName(account?.bank_name)?.name ?? account?.bank_name ?? (account?.type === "cash" ? "Cash" : ""));
   const [type, setType] = useState(account?.type ?? defaultType ?? "bank");
   const [currency, setCurrency] = useState(account?.currency ?? lookups.dataset.baseCurrency);
   const [opening, setOpening] = useState(account ? account.opening_balance : 0);
@@ -67,6 +70,7 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
     if (!account || hydratedId.current === account.id) return;
     hydratedId.current = account.id;
     setName(account.name);
+    setBankName(bankByName(account.bank_name)?.name ?? account.bank_name ?? (account.type === "cash" ? "Cash" : ""));
     setType(account.type);
     setCurrency(account.currency);
     setOpening(account.opening_balance);
@@ -91,7 +95,12 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setError(null);
+    if (!bankName) {
+      setError("Choose a bank or wallet, Cash, or Other bank.");
+      return;
+    }
     if (!name.trim()) {
       setError("Give the account a name you will recognise.");
       return;
@@ -110,7 +119,8 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
 
       const payload = {
         name: name.trim(),
-        type,
+        bank_name: bankName,
+        type: bankName === "Cash" ? "cash" : type,
         currency,
         opening_balance: opening,
         credit_limit: isCard && limit > 0 ? limit : null,
@@ -120,7 +130,7 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
       };
 
       if (account) {
-        await updateAccount(account.id, payload);
+      await updateAccount(account.id, payload);
         toast.push({ tone: "success", title: "Account updated" });
       } else {
         await createAccount(payload);
@@ -146,6 +156,7 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
       description={editing ? undefined : "Cash, bank, e-wallet, savings, investment or card."}
       variant="sheet"
       size="md"
+      busy={busy}
     >
       <form onSubmit={submit} className="space-y-4" noValidate>
         {error && (
@@ -153,6 +164,22 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
             {error}
           </p>
         )}
+
+        <div className="flex items-center gap-3">
+          <AccountAvatar account={{ bank_name: bankName, type }} size={44} />
+          <div className="min-w-0 flex-1">
+            <Select label="Bank / wallet" value={bankName} required onChange={(event) => {
+              const next = event.target.value;
+              setBankName(next);
+              if (next === "Cash") setType("cash");
+              else if (bankName === "Cash") setType(defaultType ?? "bank");
+            }}>
+              <option value="" disabled>Select bank or wallet</option>
+              {BANKS.map((bank) => <option key={bank.name} value={bank.name}>{bank.name}</option>)}
+              {bankName && !bankByName(bankName) && <option value={bankName}>{bankName}</option>}
+            </Select>
+          </div>
+        </div>
 
         <Input
           label="Account name"
@@ -174,6 +201,7 @@ export function AccountFormOverlay({ open, onClose, account, defaultType }: Acco
                   key={group.key}
                   type="button"
                   aria-pressed={active}
+                  disabled={bankName === "Cash" && group.key !== "cash"}
                   onClick={() => setType(group.key)}
                   className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[11px] font-medium transition-colors ${
                     active

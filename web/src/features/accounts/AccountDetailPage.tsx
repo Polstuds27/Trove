@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Archive,
-  CreditCard,
+  ChevronLeft,
   Pencil,
   Plus,
   Trash2,
@@ -19,6 +19,7 @@ import {
   Badge,
   Button,
   Card,
+  MascotTipCard,
   CardHeader,
   ConfirmOverlay,
   DetailRow,
@@ -30,13 +31,14 @@ import {
   useToast,
 } from "../../components/ui";
 import { byTxNewest, formatMoney, formatPercent } from "../../design/format";
-import { ACCOUNT_TYPE_LABELS, accountIcon } from "../../design/icons";
+import { ACCOUNT_TYPE_LABELS } from "../../design/icons";
+import { AccountAvatar } from "./AccountAvatar";
 import { useLocalData } from "../analytics/useLocalData";
 import { usePreferences } from "../settings/preferences";
 import { isLiability, summarize } from "../analytics/engine";
 import { periodRange, type Period } from "../analytics/period";
 import { updateAccount, toggleBookmark } from "../../db/repositories";
-import { TransactionTable } from "../transactions/TransactionList";
+import { AccountHistoryList } from "./AccountHistoryList";
 
 export function AccountDetailPage() {
   // Served by both `/accounts/:accountId` and `/credit-cards/:cardId` — the
@@ -99,7 +101,6 @@ export function AccountDetailPage() {
     );
   }
 
-  const Icon = accountIcon(account.type);
   const isCard = account.type === "credit" || account.type === "debit";
   const used = Math.abs(Math.min(0, account.current_balance));
   const utilization = account.credit_limit ? (used / account.credit_limit) * 100 : null;
@@ -138,12 +139,17 @@ export function AccountDetailPage() {
     <div className="space-y-4">
       <PageHeader
         leading={
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft-bg text-primary"
-          >
-            {isCard ? <CreditCard className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
-          </span>
+          <>
+            <button
+              type="button"
+              aria-label="Back to accounts"
+              className="lg:hidden -ml-3 inline-flex h-11 w-11 shrink-0 self-center items-center justify-center rounded-xl text-primary transition-colors hover:bg-surface-sunken active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              onClick={() => navigate(sectionBase)}
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <AccountAvatar account={account} size={40} className="self-center" />
+          </>
         }
         title={
           <span className="flex items-center gap-2">
@@ -151,7 +157,7 @@ export function AccountDetailPage() {
             {account.archived && <Badge tone="neutral">Archived</Badge>}
           </span>
         }
-        subtitle={`${ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · ${account.currency}`}
+        subtitle={`${account.bank_name ? `${account.bank_name} · ` : ""}${ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · ${account.currency}`}
         actions={
           <>
             <Button
@@ -233,29 +239,40 @@ export function AccountDetailPage() {
         ) : null}
       </Card>
 
-      <Card>
-        <CardHeader
-          title="History"
-          subtitle={`${filtered.length} transactions`}
-          action={
-            <div className="flex items-center gap-1">
-              {(["all", "in", "out"] as const).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={view === key}
-                  onClick={() => setView(key)}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                    view === key ? "bg-primary-soft-bg text-primary" : "text-muted hover:text-ink"
-                  }`}
-                >
-                  {key === "all" ? "All" : key === "in" ? "In" : "Out"}
-                </button>
-              ))}
-            </div>
-          }
-        />
-        {filtered.length === 0 ? (
+      <MascotTipCard
+        title="Quick tip"
+        lines={[
+          "Select an account to see its balance and recent activity.",
+          "Use Transfer to move money between your own accounts. It won't count as spending.",
+        ]}
+        mascotState="accounts"
+        storageKey="trove_accounts_tip_dismissed"
+        mascotSize={60}
+      />
+
+      <CardHeader
+        title="History"
+        subtitle={`${filtered.length} transactions`}
+        action={
+          <div className="flex items-center gap-1">
+            {(["all", "in", "out"] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={view === key}
+                onClick={() => setView(key)}
+                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                  view === key ? "bg-primary-soft-bg text-primary" : "text-muted hover:text-ink"
+                }`}
+              >
+                {key === "all" ? "All" : key === "in" ? "In" : "Out"}
+              </button>
+            ))}
+          </div>
+        }
+      />
+      {filtered.length === 0 ? (
+        <Card>
           <EmptyState
             icon={<Wallet className="h-6 w-6" />}
             title={history.length === 0 ? "No transactions on this account yet" : "Nothing matches this filter"}
@@ -281,15 +298,14 @@ export function AccountDetailPage() {
               )
             }
           />
-        ) : (
-          <TransactionTable
-            transactions={filtered.slice(0, 200)}
-            lookups={lookups}
-            accounts={dataset.accounts}
-            onToggleBookmark={(txId) => void toggleBookmark(txId)}
-          />
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <AccountHistoryList
+          transactions={filtered}
+          lookups={lookups}
+          onToggleBookmark={(txId) => void toggleBookmark(txId)}
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button

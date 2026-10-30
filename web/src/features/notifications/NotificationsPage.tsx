@@ -8,7 +8,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell,
   BellOff,
   CalendarClock,
   CircleAlert,
@@ -150,19 +149,17 @@ export function NotificationsPage() {
       )}
 
       {notifications.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Bell className="h-7 w-7" />}
-            title="Nothing to worry about yet"
-            description="FinTrack raises an alert when a budget crosses its threshold, a debt falls due, or a savings goal drifts off schedule. Run the checks from the button below, or wait for the scheduled run."
-            action={
-              <Button variant="primary" onClick={() => void refresh()}>
-                Check for alerts
-              </Button>
-            }
-            secondaryAction={<LinkButton to="/budgets">Open budgets</LinkButton>}
-          />
-        </Card>
+        <EmptyState
+          mascot="idle"
+          title="Nothing to worry about yet"
+          description="Trove raises an alert when a budget crosses its threshold, a debt falls due, or a savings goal drifts off schedule. Run the checks from the button below, or wait for the scheduled run."
+          action={
+            <Button variant="primary" onClick={() => void refresh()}>
+              Check for alerts
+            </Button>
+          }
+          secondaryAction={<LinkButton to="/budgets">Open budgets</LinkButton>}
+        />
       ) : visible.length === 0 ? (
         <Card>
           <EmptyState

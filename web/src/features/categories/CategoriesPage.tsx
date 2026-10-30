@@ -1,232 +1,266 @@
 /**
  * Categories.
  *
- * The taxonomy behind every report. Shown as two short lists (expense, income)
- * rather than one long table, with subcategories indented under their parent so
- * the hierarchy is legible at a glance. Creation and editing live at
- * `/categories/new` and `/categories/:categoryId/edit`.
+ * The taxonomy behind every report. Two cards — expense and income — with a
+ * colour swatch, the transaction count and the total for each row, so the
+ * screen answers "where does my money actually go?" at a glance. Subcategories
+ * stay indented under their parent as a quiet second level.
+ *
+ * Creation and editing live at `/categories/new` and
+ * `/categories/:categoryId/edit`.
  */
 import { useMemo } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowDownRight, ArrowUpRight, Pencil, Plus, Tags } from "lucide-react";
-import {
-  Button,
-  Card,
-  CardHeader,
-  EmptyState,
-  LinkButton,
-  PageHeader,
-  SegmentedControl,
-} from "../../components/ui";
+import { Link, useNavigate } from "react-router-dom";
+import { Pencil, Plus, Tags } from "lucide-react";
+import { Button, EmptyState, LinkButton, PageHeader, SurfaceCard } from "../../components/ui";
 import type { LocalCategory } from "../../db/types";
+import { formatMoney } from "../../design/format";
 import { categoryIcon } from "../../design/icons";
 import { useLocalData } from "../analytics/useLocalData";
-
-type Filter = "expense" | "income" | "all";
+import { convert, type FxTable } from "../analytics/fx";
 
 interface CategoryNode {
   category: LocalCategory;
   children: CategoryNode[];
   usage: number;
+  total: number;
 }
 
 export function CategoriesPage() {
-  const { dataset, ready } = useLocalData();
+  const { dataset, lookups, ready } = useLocalData();
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const filter = (params.get("type") as Filter) ?? "expense";
+  const currency = lookups.dataset.baseCurrency;
 
-  /** Transactions pointing at the category or any of its children. */
-  const usageById = useMemo(() => {
-    const counts = new Map<string, number>();
+  /** Per-category activity: number of transactions and the converted total. */
+  const activity = useMemo(() => {
+    const rows = new Map<string, { count: number; total: number }>();
     for (const tx of dataset.transactions) {
-      if (!tx.category_id) continue;
-      counts.set(tx.category_id, (counts.get(tx.category_id) ?? 0) + 1);
+      if (!tx.category_id || tx.type === "transfer") continue;
+      const current = rows.get(tx.category_id) ?? { count: 0, total: 0 };
+      rows.set(tx.category_id, {
+        count: current.count + 1,
+        total: current.total + Math.abs(convert(tx.amount, tx.currency, lookups.fx as FxTable)),
+      });
     }
-    return counts;
-  }, [dataset.transactions]);
+    return rows;
+  }, [dataset.transactions, lookups.fx]);
 
   const nodes = useMemo(() => {
-    const roots = dataset.categories.filter((row) => !row.parent_id);
+    const roots = dataset.categories
+      .filter((row) => !row.parent_id)
+      .sort((a, b) => a.name.localeCompare(b.name));
     const build = (root: LocalCategory): CategoryNode => {
       const children = dataset.categories
         .filter((row) => row.parent_id === root.id)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map((child) => build(child));
-      const own = usageById.get(root.id) ?? 0;
-      const childUsage = children.reduce((sum, child) => sum + child.usage, 0);
-      return { category: root, children, usage: own + childUsage };
+      const own = activity.get(root.id) ?? { count: 0, total: 0 };
+      return {
+        category: root,
+        children,
+        usage: own.count + children.reduce((sum, child) => sum + child.usage, 0),
+        total: own.total + children.reduce((sum, child) => sum + child.total, 0),
+      };
     };
     return roots.map(build);
-  }, [dataset.categories, usageById]);
+  }, [dataset.categories, activity]);
 
-  const visible = useMemo(
-    () => (filter === "all" ? nodes : nodes.filter((node) => node.category.type === filter)),
-    [nodes, filter],
-  );
-
-  const expenseCount = nodes.filter((node) => node.category.type === "expense").length;
-  const incomeCount = nodes.filter((node) => node.category.type === "income").length;
+  const expense = nodes.filter((node) => node.category.type === "expense");
+  const income = nodes.filter((node) => node.category.type === "income");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-[18px]">
       <PageHeader
         title="Categories"
-        subtitle={`${nodes.length} top level · ${dataset.categories.length} including subcategories`}
+        subtitle="How your money is sorted"
+        showActionsOnMobile
         actions={
-          <Button variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/categories/new")}>
-            New category
+          <Button
+            variant="primary"
+            icon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate("/categories/new")}
+          >
+            Add category
           </Button>
-        }
-        tabs={
-          <div className="flex flex-wrap items-center gap-2">
-            <SegmentedControl
-              size="sm"
-              options={[
-                { id: "expense", label: "Expense", icon: <ArrowDownRight className="h-3.5 w-3.5" /> },
-                { id: "income", label: "Income", icon: <ArrowUpRight className="h-3.5 w-3.5" /> },
-                { id: "all", label: "All" },
-              ]}
-              value={filter}
-              onChange={(next) => {
-                const nextParams = new URLSearchParams(params);
-                nextParams.set("type", next);
-                setParams(nextParams, { replace: true });
-              }}
-              ariaLabel="Category type"
-            />
-            <span className="text-xs text-muted">
-              {filter === "income" ? incomeCount : filter === "expense" ? expenseCount : nodes.length} shown
-            </span>
-          </div>
         }
       />
 
       {ready && dataset.categories.length === 0 ? (
-        <Card>
+        <SurfaceCard className="mt-5 px-6 py-12">
           <EmptyState
-            icon={<Tags className="h-7 w-7" />}
+            state="budgetOnTrack"
             title="No categories yet"
-            description="Categories are what turn a list of transactions into a report: they tell you where the money went and give budgets something to hold onto. Start with a handful of real ones and add more as you go."
+            description="Categories turn a list of transactions into a report: they tell you where the money went and give budgets something to hold onto."
             action={
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate("/categories/new")}>
+              <Button
+                variant="primary"
+                icon={<Plus className="h-4 w-4" />}
+                onClick={() => navigate("/categories/new")}
+              >
                 Create your first category
               </Button>
             }
             secondaryAction={<LinkButton to="/transactions">I'll do this later</LinkButton>}
           />
-        </Card>
+        </SurfaceCard>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {(["expense", "income"] as const).map((kind) => {
-            const Icon = kind === "expense" ? ArrowDownRight : ArrowUpRight;
-            const rows =
-              filter === "all" || filter === kind
-                ? visible.filter((node) => node.category.type === kind)
-                : [];
-            if (filter !== "all" && filter !== kind) return null;
-            return (
-              <section key={kind} className="card overflow-hidden">
-                <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5">
-                  <h2 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted uppercase">
-                    <Icon aria-hidden="true" className="h-3.5 w-3.5" />
-                    {kind === "expense" ? "Expense categories" : "Income categories"}
-                  </h2>
-                  <span className="tabular text-xs text-muted">{rows.length}</span>
-                </header>
-
-                {rows.length === 0 ? (
-                  <EmptyState
-                    compact
-                    icon={<Tags className="h-6 w-6" />}
-                    title={kind === "expense" ? "No expense categories" : "No income categories"}
-                    description="Add one so transactions can be classified as they happen."
-                    action={
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={<Plus className="h-4 w-4" />}
-                        onClick={() => navigate(`/categories/new?type=${kind}`)}
-                      >
-                        Add {kind} category
-                      </Button>
-                    }
-                  />
-                ) : (
-                  <ul className="divide-y divide-line">
-                    {rows.map((node) => (
-                      <CategoryNodeRow key={node.category.id} node={node} depth={0} />
-                    ))}
-                  </ul>
-                )}
-              </section>
-            );
-          })}
+        <div className="grid gap-[17px] lg:grid-cols-2 lg:items-start">
+          <CategoryCard
+            kind="expense"
+            title="Expense"
+            nodes={expense}
+            currency={currency}
+            onAdd={() => navigate("/categories/new?type=expense")}
+          />
+          <CategoryCard
+            kind="income"
+            title="Income"
+            nodes={income}
+            currency={currency}
+            onAdd={() => navigate("/categories/new?type=income")}
+          />
         </div>
       )}
-
-      <Card>
-        <CardHeader
-          title="How categories work"
-          subtitle="Three things worth knowing"
-          icon={<Tags className="h-4 w-4" />}
-        />
-        <ul className="space-y-2 px-4 py-3 text-sm text-muted">
-          <li>
-            <span className="font-medium text-ink">Subcategories roll up.</span> A budget or report
-            on a parent covers every child, so you can be as fine-grained as you like.
-          </li>
-          <li>
-            <span className="font-medium text-ink">Deleting is safe.</span> Transactions keep their
-            history; they simply become uncategorised until you pick another.
-          </li>
-          <li>
-            <span className="font-medium text-ink">Type matters.</span> Expense and income
-            categories are separate so a salary can never land in a spending report.
-          </li>
-        </ul>
-      </Card>
     </div>
   );
 }
 
-function CategoryNodeRow({ node, depth }: { node: CategoryNode; depth: number }) {
-  const Icon = categoryIcon(node.category.icon, node.category.name);
+function CategoryCard({
+  kind,
+  title,
+  nodes,
+  currency,
+  onAdd,
+}: {
+  kind: "expense" | "income";
+  title: string;
+  nodes: CategoryNode[];
+  currency: string;
+  onAdd: () => void;
+}) {
+  const total = nodes.reduce((sum, node) => sum + node.total, 0);
+
+  return (
+    <section className="min-w-0">
+      {/* Mobile keeps the heading outside the card, per spec §7.1. */}
+      <div className="mb-2 flex items-baseline justify-between gap-3 px-1 lg:hidden">
+        <h2 className="text-[16px] font-semibold leading-6 tracking-[-0.01em] text-ink">{title}</h2>
+        <span className="tabular text-[12px] text-muted">
+          {formatMoney(total, currency)}
+        </span>
+      </div>
+
+      <SurfaceCard className="overflow-hidden">
+        <header className="hidden items-baseline justify-between gap-3 border-b border-line/70 px-6 py-4 lg:flex">
+          <h2 className="text-[16px] font-semibold leading-6 tracking-[-0.01em] text-ink">
+            {title}
+          </h2>
+          <span className="tabular text-[12px] text-muted">
+            {nodes.length} {nodes.length === 1 ? "category" : "categories"}
+            <span className="px-1.5 text-faint">·</span>
+            {formatMoney(total, currency)}
+          </span>
+        </header>
+
+        {nodes.length === 0 ? (
+          <div className="px-6 py-8 text-center">
+            <span
+              aria-hidden="true"
+              className="mx-auto flex h-11 w-11 items-center justify-center rounded-[14px] bg-surface-sunken text-muted"
+            >
+              <Tags className="h-5 w-5" />
+            </span>
+            <p className="mt-3 text-[13px] font-semibold text-ink">
+              No {kind} categories
+            </p>
+            <p className="mx-auto mt-1 max-w-[30ch] text-[12.5px] leading-5 text-muted">
+              Add one so transactions can be classified as they happen.
+            </p>
+            <Button variant="secondary" size="sm" className="mt-3" icon={<Plus className="h-3.5 w-3.5" />} onClick={onAdd}>
+              Add {kind} category
+            </Button>
+          </div>
+        ) : (
+          <ul className="max-h-[360px] overflow-y-auto px-3 sm:px-4">
+            {nodes.map((node) => (
+              <CategoryRow key={node.category.id} node={node} depth={0} currency={currency} />
+            ))}
+          </ul>
+        )}
+
+        <div className="border-t border-line/70 px-5 py-2.5 sm:px-6">
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:underline"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add category
+          </button>
+        </div>
+      </SurfaceCard>
+    </section>
+  );
+}
+
+function CategoryRow({
+  node,
+  depth,
+  currency,
+}: {
+  node: CategoryNode;
+  depth: number;
+  currency: string;
+}) {
+  const { category } = node;
+  const Icon = categoryIcon(category.icon, category.name);
+  const countLabel =
+    node.usage === 0
+      ? "No activity"
+      : `${node.usage} transaction${node.usage === 1 ? "" : "s"}`;
+
   return (
     <li>
-      <div
-        className="row-link flex items-center gap-3 px-4 py-2.5"
-        style={{ paddingLeft: `${16 + depth * 20}px` }}
+      <Link
+        to={`/categories/${category.id}/edit`}
+        className="group flex items-center gap-3 rounded-[16px] py-3 pr-2 transition-colors hover:bg-surface-sunken/45"
+        style={{ paddingLeft: `${depth * 18}px` }}
       >
         <span
           aria-hidden="true"
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-            depth > 0 ? "bg-surface text-muted" : "bg-surface-sunken text-ink-soft"
-          }`}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-surface-sunken text-primary"
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-[18px] w-[18px]" />
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-ink">
+        <span className="min-w-0 flex-1">
+          <span
+            className={`block truncate font-semibold leading-5 text-ink ${
+              depth > 0 ? "text-[14px]" : "text-[15px]"
+            }`}
+          >
+            {category.name}
+          </span>
+          <span className="mt-0.5 block truncate text-[12.5px] leading-[18px] text-muted">
             {depth > 0 && <span aria-hidden="true" className="mr-1 text-faint">↳</span>}
-            {node.category.name}
-          </p>
-          <p className="text-xs text-muted">
-            {node.usage === 0 ? "Not used yet" : `${node.usage} transaction${node.usage === 1 ? "" : "s"}`}
-            {node.children.length > 0 && ` · ${node.children.length} subcategor${node.children.length === 1 ? "y" : "ies"}`}
-          </p>
-        </div>
-        <Link
-          to={`/categories/${node.category.id}/edit`}
-          aria-label={`Edit ${node.category.name}`}
-          className="icon-btn h-8 w-8 text-muted hover:text-ink"
-        >
-          <Pencil className="h-4 w-4" />
-        </Link>
-      </div>
+            {countLabel}
+          </span>
+        </span>
+        <span className="tabular shrink-0 text-right text-[14px] font-semibold text-ink">
+          {formatMoney(node.total, currency)}
+        </span>
+        <Pencil
+          aria-hidden="true"
+          className="h-3.5 w-3.5 shrink-0 text-faint opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+        />
+      </Link>
       {node.children.length > 0 && (
-        <ul className="divide-y divide-line">
+        <ul>
           {node.children.map((child) => (
-            <CategoryNodeRow key={child.category.id} node={child} depth={depth + 1} />
+            <CategoryRow
+              key={child.category.id}
+              node={child}
+              depth={depth + 1}
+              currency={currency}
+            />
           ))}
         </ul>
       )}

@@ -29,50 +29,59 @@ export async function enqueueMutation(
   baseVersion: number,
 ): Promise<void> {
   const owner = signedInOwner();
-  const pending = await db.outbox
-    .where("entity_id")
-    .equals(entityId)
-    .filter((entry) => entry.status !== "conflict" && entry.op !== "delete")
-    .first();
+  await db.transaction("rw", db.outbox, async () => {
+    const pending = await db.outbox
+      .where("entity_id")
+      .equals(entityId)
+      .filter((entry) => entry.status !== "conflict" && entry.op !== "delete")
+      .first();
 
-  if (pending) {
-    if (pending.owner && owner && pending.owner !== owner) {
-      // Queued by an account that isn't signed in: drop it rather than merge
-      // this account's values into someone else's mutation.
-      await db.outbox.delete(pending.id);
-    } else if (op === "delete" && pending.op === "create") {
-      // Created and deleted before ever reaching the server: net no-op. Drop
-      // the queued create instead of pushing an emptied row that Neon must
-      // then reject or, worse, store as a phantom record.
-      await db.outbox.delete(pending.id);
-      return;
-    } else {
-      // Same row already queued: keep the original create/insert and merge the new values.
-      const mergedOp = pending.op === "create" ? "create" : op;
-      await db.outbox.update(pending.id, {
-        op: mergedOp,
-        payload: row ? { ...pending.payload, ...toServerPayload(entity, row as Json) } : {},
-        status: "pending",
-        last_error: null,
-        owner: owner ?? pending.owner ?? null,
-      });
-      return;
+    if (pending) {
+      if (pending.owner && owner && pending.owner !== owner) {
+        // Queued by an account that isn't signed in: drop it rather than merge
+        // this account's values into someone else's mutation.
+        await db.outbox.delete(pending.id);
+      } else if (op === "delete" && pending.op === "create") {
+        // Created and deleted before ever reaching the server: net no-op. Drop
+        // the queued create instead of pushing an emptied row that Neon must
+        // then reject or, worse, store as a phantom record.
+        await db.outbox.delete(pending.id);
+        return;
+      } else {
+        // Same row already queued: keep the original create/insert and merge the new values.
+        const mergedOp = pending.op === "create" ? "create" : op;
+        // An edited payload is a new request. Reusing an id would replay the
+        // server's cached rejection/acknowledgement for the previous payload.
+        await db.outbox.put({
+          ...pending,
+          id: crypto.randomUUID(),
+          op: mergedOp,
+          payload: row ? { ...pending.payload, ...toServerPayload(entity, row as Json) } : {},
+          status: "pending",
+          last_error: null,
+          attempts: 0,
+          server_version: null,
+          owner: owner ?? pending.owner ?? null,
+        });
+        await db.outbox.delete(pending.id);
+        return;
+      }
     }
-  }
 
-  await db.outbox.add({
-    id: crypto.randomUUID(),
-    entity,
-    entity_id: entityId,
-    op,
-    base_version: baseVersion,
-    payload: row ? toServerPayload(entity, row as Json) : {},
-    status: "pending",
-    attempts: 0,
-    last_error: null,
-    server_version: null,
-    created_at: new Date().toISOString(),
-    owner,
+    await db.outbox.add({
+      id: crypto.randomUUID(),
+      entity,
+      entity_id: entityId,
+      op,
+      base_version: baseVersion,
+      payload: row ? toServerPayload(entity, row as Json) : {},
+      status: "pending",
+      attempts: 0,
+      last_error: null,
+      server_version: null,
+      created_at: new Date().toISOString(),
+      owner,
+    });
   });
 }
 
@@ -106,7 +115,19 @@ export async function parkedEntries(limit = 50): Promise<OutboxEntry[]> {
 
 /** Give a parked entry one more chance: back to the push batch. */
 export async function retryMutation(id: string): Promise<void> {
-  await db.outbox.update(id, { status: "pending", attempts: 0, last_error: null });
+  await db.transaction("rw", db.outbox, async () => {
+    const entry = await db.outbox.get(id);
+    if (!entry || !ownedByCurrentAccount(entry)) return;
+    await db.outbox.put({
+      ...entry,
+      id: crypto.randomUUID(),
+      status: "pending",
+      attempts: 0,
+      last_error: null,
+      server_version: null,
+    });
+    await db.outbox.delete(id);
+  });
 }
 
 /** Give every parked entry one more chance. */
@@ -114,7 +135,7 @@ export async function retryAllParked(): Promise<number> {
   const ids = await db.outbox
     .filter((entry) => ownedByCurrentAccount(entry) && entry.status === "failed")
     .primaryKeys();
-  await db.outbox.where("id").anyOf(ids).modify({ status: "pending", attempts: 0, last_error: null });
+  for (const id of ids) await retryMutation(String(id));
   return ids.length;
 }
 
@@ -131,7 +152,10 @@ export async function releaseWronglyParked(): Promise<number> {
   if (await getMeta("outbox_amnesty_v1")) return 0;
   const ids = await db.outbox.filter((entry) => entry.status === "failed").primaryKeys();
   if (ids.length > 0) {
-    await db.outbox.where("id").anyOf(ids).modify({ status: "pending", attempts: 0, last_error: null });
+    await db.outbox
+      .where("id")
+      .anyOf(ids)
+      .modify({ status: "pending", attempts: 0, last_error: null });
   }
   await setMeta("outbox_amnesty_v1", new Date().toISOString());
   return ids.length;

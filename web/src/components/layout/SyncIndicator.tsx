@@ -1,5 +1,6 @@
 import { CircleAlert, CloudOff, CloudSync, RefreshCw, WifiOff, type LucideIcon } from "lucide-react";
 import { useSync } from "../../sync/SyncContext";
+import { useSessionRecovery } from "../../auth/SessionRecovery";
 import { syncVisual, type SyncVisual } from "../../sync/status";
 import { formatRelativeTime } from "../../design/format";
 import { IconButton } from "../ui/Button";
@@ -42,6 +43,7 @@ function visualLabel(visual: SyncVisual, pendingCount: number): string {
  * It never exposes queues, sequence numbers or retry counts (§6/§47).
  */
 export function SyncIndicator({ compact = false }: { compact?: boolean }) {
+  const requestRecovery = useSessionRecovery();
   const { status, pendingCount, conflicts, lastSyncedAt, syncNow } = useSync();
   const visual = syncVisual(status, pendingCount, conflicts.length);
   const { Icon, className } = PRESENTATION[visual];
@@ -51,7 +53,7 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
     visual === "offline"
       ? "Saved on this device. It will sync when you're back online."
       : visual === "api-unavailable"
-        ? "Your connection is up but FinTrack can't reach the server. Retrying automatically — changes stay queued."
+        ? "Your connection is up but Trove can't reach the server. Retrying automatically — changes stay queued."
         : visual === "conflict"
         ? `${conflicts.length} ${conflicts.length === 1 ? "record needs" : "records need"} your attention.`
         : visual === "pending"
@@ -71,8 +73,8 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <IconButton
-        label={visual === "syncing" ? "Syncing" : visual === "error" ? "Retry sync" : "Sync now"}
-        onClick={() => void syncNow()}
+        label={visual === "signed-out" ? "Sign in to resume syncing" : visual === "syncing" ? "Syncing" : visual === "error" ? "Retry sync" : "Sync now"}
+        onClick={() => visual === "signed-out" ? requestRecovery() : void syncNow()}
         disabled={status === "syncing"}
         className={className}
       >
@@ -89,6 +91,7 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
 
 /** Verbose variant used in Settings, where the explanation has room to breathe. */
 export function SyncStatusPanel() {
+  const requestRecovery = useSessionRecovery();
   const { status, pendingCount, conflicts, lastSyncedAt, syncNow } = useSync();
   const visual = syncVisual(status, pendingCount, conflicts.length);
   const { Icon, className } = PRESENTATION[visual];
@@ -98,7 +101,7 @@ export function SyncStatusPanel() {
     visual === "offline"
       ? "You're offline. Your changes are saved on this device and will sync automatically when you're back online."
       : visual === "api-unavailable"
-        ? "Your device is online but the FinTrack server isn't answering. Your changes stay queued and sync resumes on its own — no need to keep tapping."
+        ? "Your device is online but the Trove server isn't answering. Your changes stay queued and sync resumes on its own — no need to keep tapping."
         : visual === "conflict"
         ? "Some records were changed on another device while you had unsynced edits. Review them to pick which version to keep."
         : visual === "pending"
@@ -125,7 +128,7 @@ export function SyncStatusPanel() {
         <p className="text-sm font-semibold text-ink">{label}</p>
         <p className="mt-0.5 text-sm leading-relaxed text-muted">{detail}</p>
       </div>
-      <IconButton label="Sync now" onClick={() => void syncNow()} disabled={status === "syncing"}>
+      <IconButton label={visual === "signed-out" ? "Sign in to resume syncing" : "Sync now"} onClick={() => visual === "signed-out" ? requestRecovery() : void syncNow()} disabled={status === "syncing"}>
         <RefreshCw className={`h-4 w-4 ${status === "syncing" ? "animate-spin" : ""}`} />
       </IconButton>
     </div>

@@ -36,6 +36,7 @@ export interface LocalAccount extends SyncFields {
   id: string;
   group_id: string | null;
   name: string;
+  bank_name: string | null;
   type: string;
   currency: string;
   opening_balance: number;

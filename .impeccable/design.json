@@ -1,0 +1,151 @@
+{
+  "name": "Trove",
+  "mode": "Operate",
+  "palette": {
+    "forest": [41, 71, 55],
+    "sage": [155, 167, 138],
+    "sand": [223, 197, 173],
+    "cream": [247, 240, 229],
+    "warm-gray": [217, 211, 201],
+    "ink": [27, 42, 34],
+    "ink-soft": [49, 64, 55],
+    "muted": [107, 122, 110],
+    "faint": [138, 150, 139],
+    "surface": [255, 253, 250],
+    "canvas": [247, 240, 229],
+    "line": [217, 211, 201],
+    "line-strong": [194, 187, 174],
+    "income": [31, 110, 66],
+    "expense": [185, 55, 45],
+    "transfer": [63, 96, 138],
+    "warning": [160, 95, 16],
+    "info": [63, 96, 138],
+    "overlay": [27, 42, 34],
+    "income-soft": [224, 236, 226],
+    "expense-soft": [245, 225, 220],
+    "transfer-soft": [224, 231, 239],
+    "warning-soft": [244, 231, 213],
+    "info-soft": [224, 231, 239],
+    "primary-soft-bg": [231, 234, 220]
+  },
+  "dark": {
+    "canvas": [19, 28, 22],
+    "surface": [26, 37, 30],
+    "surface-raised": [34, 47, 38],
+    "surface-sunken": [15, 23, 18],
+    "ink": [240, 234, 223],
+    "ink-soft": [214, 208, 196],
+    "muted": [156, 167, 153],
+    "faint": [124, 135, 122],
+    "line": [44, 58, 48],
+    "line-strong": [60, 76, 65],
+    "forest": [140, 164, 143],
+    "sage": [155, 167, 138],
+    "sand": [176, 152, 130],
+    "income": [94, 191, 133],
+    "expense": [240, 124, 110],
+    "transfer": [133, 164, 205],
+    "warning": [231, 174, 74],
+    "info": [133, 164, 205],
+    "overlay": [27, 42, 34],
+    "income-soft": [30, 58, 42],
+    "expense-soft": [74, 37, 31],
+    "transfer-soft": [31, 47, 64],
+    "warning-soft": [66, 51, 24],
+    "info-soft": [31, 47, 64],
+    "primary-soft-bg": [32, 45, 36]
+  },
+  "typography": {
+    "fontStack": [
+      "-apple-system",
+      "system-ui",
+      "BlinkMacSystemFont",
+      "Segoe UI",
+      "Roboto",
+      "Helvetica Neue",
+      "Arial",
+      "sans-serif"
+    ],
+    "tabularNumerals": true,
+    "radii": {
+      "xl": 12,
+      "2xl": 16,
+      "3xl": 20
+    }
+  },
+  "glass": {
+    "surfaces": [
+      "floating mobile nav",
+      "balance/net-worth tile",
+      "quick-action sheet (opaque shipped)"
+    ],
+    "fallback": "opaque",
+    "blur": 16
+  },
+  "mascot": {
+    "source": "web/public/mascot/refined/",
+    "poses": [
+      "idle", "celebrate", "cheer", "delight", "sleep", "read", "talk", "rest",
+      "ledger", "coin", "shy", "note", "save", "guard", "shield", "peek"
+    ],
+    "rules": [
+      "no continuous bounce",
+      "never behind text",
+      "moments only"
+    ]
+  },
+  "copy": {
+    "renamed": "FinTrack → Trove (frontend/marketing only)",
+    "preservedKeys": [
+      "fintrack_access",
+      "fintrack_refresh",
+      "fintrack_email",
+      "fintrack_local_owner",
+      "fintrack_sync_debug",
+      "fintrack_mfa_pending"
+    ]
+  },
+  "verification": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "detect": "clean []",
+    "tests": "32 passed, 1 pre-existing unrelated failure (format.test.ts, passes only on Oct 7)"
+  },
+  "keyFiles": [
+    "web/src/index.css",
+    "web/tailwind.config.cjs",
+    "web/src/components/layout/AppShell.tsx",
+    "web/src/components/ui/Mascot.tsx",
+    "web/src/components/ui/Button.tsx",
+    "web/src/components/ui/Controls.tsx",
+    "web/src/components/ui/Overlay.tsx",
+    "web/src/components/ui/Primitives.tsx",
+    "web/src/components/ui/Feedback.tsx",
+    "web/src/components/ui/Charts.tsx",
+    "web/src/components/ui/PageHeader.tsx",
+    "web/src/components/ui/index.ts",
+    "web/src/components/layout/NetworkBanner.tsx",
+    "web/src/components/layout/SyncIndicator.tsx",
+    "web/src/features/landing/LandingPage.tsx",
+    "web/src/features/landing/InstallSection.tsx",
+    "web/src/features/overview/OverviewPage.tsx",
+    "web/src/features/transactions/TransactionsPage.tsx",
+    "web/src/features/transactions/QuickAddSheet.tsx",
+    "web/src/features/auth/LoginPage.tsx",
+    "web/src/features/auth/MfaPage.tsx",
+    "web/src/features/auth/AuthLayout.tsx",
+    "web/src/features/auth/CacheClaimRecovery.tsx",
+    "web/src/index.html",
+    "web/public/manifest.webmanifest",
+    "web/public/sw.js",
+    "web/public/icons/favicon.ico",
+    "web/public/mascot/refined/manifest.json"
+  ],
+  "remainingIssues": [
+    "docs/theme.md stale (old emerald palette)",
+    "Overview mobile source order",
+    "quick-action sheet shipped opaque",
+    "caret-color not explicitly themed"
+  ]
+}

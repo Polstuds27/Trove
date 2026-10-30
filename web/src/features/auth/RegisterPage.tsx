@@ -67,6 +67,7 @@ export function RegisterPage() {
 
   return (
     <AuthLayout
+      mascot="createAccount"
       title="Create your account"
       subtitle="Track every account, budget and goal from one place — online or offline."
       footer={
@@ -142,7 +143,7 @@ export function RegisterPage() {
             <div className="flex items-center gap-2">
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-sunken">
                 <div
-                  className={`h-full rounded-full transition-[width] duration-300 ${
+                  className={`h-full rounded-full transition-[width] duration-slow ${
                     passed <= 1 ? "bg-expense" : passed === 2 ? "bg-warning" : "bg-income"
                   }`}
                   style={{ width: `${(passed / CHECKS.length) * 100}%` }}

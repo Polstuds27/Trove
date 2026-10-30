@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // Kept in the console: the UI already tells the user what to do.
-    console.error("FinTrack: screen failed to render", error, info.componentStack);
+    console.error("Trove: screen failed to render", error, info.componentStack);
   }
 
   render(): ReactNode {

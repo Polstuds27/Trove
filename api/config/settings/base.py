@@ -112,7 +112,7 @@ EMAILJS_TEMPLATE_ID = env("EMAILJS_TEMPLATE_ID", default="")
 # the public key also works if that is all you have.
 EMAILJS_PRIVATE_KEY = env("EMAILJS_PRIVATE_KEY", default="")
 EMAILJS_PUBLIC_KEY = env("EMAILJS_PUBLIC_KEY", default="")
-EMAILJS_FROM_NAME = env("EMAILJS_FROM_NAME", default="FinTrack")
+EMAILJS_FROM_NAME = env("EMAILJS_FROM_NAME", default="Trove")
 URL = env("URL", default="http://localhost:8000").rstrip("/")
 
 # Base URL of the deployed frontend. Verification and password-reset emails link

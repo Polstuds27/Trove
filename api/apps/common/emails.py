@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
+from email.utils import formataddr, parseaddr
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -40,11 +41,18 @@ def send_template_email(
 
     New email types stop here: a template file, no dashboard work, no new env
     vars. Failures are logged, never raised, so mail hiccups don't break API
-    requests. The envelope template owns branding; this owns content.
+    requests. Django templates own branding; the provider envelope passes the
+    rendered HTML through unchanged.
     """
     from django.template.loader import render_to_string
 
-    html_body = render_to_string(f"emails/{template_name}", context or {})
+    template_context = {**(context or {}), "app_url": settings.FRONTEND_URL}
+    html_body = render_to_string(f"emails/{template_name}", template_context)
+    text_template = template_name.rsplit(".", 1)[0] + ".txt"
+    text_body = render_to_string(f"emails/{text_template}", template_context)
+    from_name = settings.EMAILJS_FROM_NAME.strip()
+    if from_name.lower() in {"", "fintrack"}:
+        from_name = "Trove"
     try:
         if emailjs_configured():
             payload = {
@@ -56,13 +64,15 @@ def send_template_email(
                     "email": to,
                     "subject": subject,
                     "to_name": to_name,
+                    "from_name": from_name,
                     "html_body": html_body,
                 },
             }
             _post_emailjs(payload)
         else:
             # Optional SMTP fallback
-            send_mail(subject, html_body, settings.DEFAULT_FROM_EMAIL, [to])
+            sender = formataddr((from_name, parseaddr(settings.DEFAULT_FROM_EMAIL)[1]))
+            send_mail(subject, text_body, sender, [to], html_message=html_body)
     except Exception:
         log.exception("Could not send '%s' email to %s", subject, to)
 
@@ -74,7 +84,7 @@ def _post_emailjs(payload: dict) -> None:
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
-            "User-Agent": "FinTrack/1.0",
+            "User-Agent": "Trove/1.0",
             "Accept": "application/json",
         },
         method="POST",
@@ -94,7 +104,7 @@ def send_email(*, to: str, link: str = "") -> None:
     """Send a password-reset email through the generic envelope template."""
     send_template_email(
         to=to,
-        subject="Reset your FinTrack password",
+        subject="Reset your Trove password",
         template_name="password_reset.html",
         context={"link": link},
     )
@@ -104,7 +114,7 @@ def send_verification_email(*, to: str, link: str, name: str) -> None:
     """Send a verification email through the generic envelope template."""
     send_template_email(
         to=to,
-        subject="Verify your FinTrack account",
+        subject="Verify your Trove account",
         template_name="verify.html",
         context={"link": link, "name": name},
         to_name=name,
@@ -112,11 +122,10 @@ def send_verification_email(*, to: str, link: str, name: str) -> None:
 
 
 def send_mfa_code_email(*, to: str, code: str, minutes: int = 15) -> None:
-    """Send a one-time MFA backup code. Sender only — no endpoint calls this
-    yet; the recovery-via-email flow will plug in here when approved."""
+    """Send a one-time MFA backup code for the email recovery flow."""
     send_template_email(
         to=to,
-        subject="Your FinTrack sign-in code",
+        subject="Your Trove sign-in code",
         template_name="mfa_code.html",
         context={"code": code, "minutes": minutes},
     )

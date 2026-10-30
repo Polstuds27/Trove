@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { currencySymbol, parseNumber } from "../../design/format";
+import { usePresence } from "../../lib/usePresence";
 import { IconButton } from "./Button";
 
 /* -------------------------------------------------------------- AmountInput */
@@ -127,7 +129,7 @@ export function Tabs<T extends string>({
             type="button"
             aria-selected={active}
             onClick={() => onChange(item.id)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-lg font-medium transition-colors ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg font-medium transition-colors duration-fast ${
               size === "sm" ? "px-2.5 py-1.5 text-xs" : "px-3 py-1.5 text-sm"
             } ${
               active
@@ -197,7 +199,7 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(option.id)}
-            className={`flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors ${
+            className={`flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors duration-fast ${
               size === "sm" ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"
             } ${toneClass}`}
           >
@@ -233,10 +235,14 @@ export function Dropdown({
   label: string;
 }) {
   const [open, setOpen] = useState(false);
+  const { mounted, closing } = usePresence(open, 160);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   // Fixed positioning escapes `overflow-hidden` ancestors (e.g. the rounded
   // group cards on the Accounts page, which used to clip the menu invisibly).
+  // The menu is portaled so ancestors with `backdrop-filter` (the sidebar) or a
+  // transform can't become its containing block and push it off screen.
   const [placement, setPlacement] = useState<{ top?: number; bottom?: number; left?: number; right?: number }>({});
 
   useEffect(() => {
@@ -261,7 +267,9 @@ export function Dropdown({
     };
     place();
     const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      // The menu is portaled, so it is not inside the trigger's root.
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
@@ -293,33 +301,38 @@ export function Dropdown({
       >
         {trigger}
       </button>
-      {open && (
-        <div
-          role="menu"
-          aria-label={label}
-          style={placement}
-          className="fixed z-50 min-w-44 animate-rise rounded-xl border border-line bg-surface py-1 shadow-overlay"
-        >
-          {items.map((item) => (
-            <button
-              key={item.id}
-              role="menuitem"
-              type="button"
-              disabled={item.disabled}
-              onClick={() => {
-                setOpen(false);
-                item.onSelect();
-              }}
-              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-sunken disabled:opacity-50 ${
-                item.tone === "danger" ? "text-expense" : "text-ink"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {mounted &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            aria-label={label}
+            style={placement}
+            className={`fixed z-50 min-w-44 rounded-xl border border-line bg-surface py-1 shadow-overlay ${
+              align === "end" ? "origin-top-right" : "origin-top-left"
+            } ${closing ? "animate-fade-out pointer-events-none" : "animate-panel-in"}`}
+          >
+            {items.map((item) => (
+              <button
+                key={item.id}
+                role="menuitem"
+                type="button"
+                disabled={item.disabled}
+                onClick={() => {
+                  setOpen(false);
+                  item.onSelect();
+                }}
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-sunken disabled:opacity-50 ${
+                  item.tone === "danger" ? "text-expense" : "text-ink"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -349,7 +362,7 @@ export function OptionGrid<T extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(option.id)}
-            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors duration-fast ${
               active
                 ? "border-primary bg-primary-soft-bg font-medium text-primary"
                 : "border-line bg-surface text-ink hover:border-line-strong"
@@ -387,7 +400,7 @@ export function Collapsible({
         {summary}
         <ChevronDown
           aria-hidden="true"
-          className={`h-4 w-4 shrink-0 text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-muted transition-transform duration-base ease-smooth ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && <div className="animate-rise pt-3">{children}</div>}

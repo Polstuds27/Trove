@@ -13,7 +13,6 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db";
 import { Button, Overlay } from "../../components/ui";
 import { AccountFormOverlay } from "./AccountFormOverlay";
-import { useLocalData } from "../analytics/useLocalData";
 
 export function AccountEditor() {
   const navigate = useNavigate();
@@ -22,10 +21,9 @@ export function AccountEditor() {
   const { accountId, cardId } = useParams<{ accountId: string; cardId: string }>();
   const id = paramId(accountId ?? cardId);
   const editing = id !== undefined;
-  const { ready } = useLocalData();
 
   const account = useLiveQuery(
-    async () => (id ? db.accounts.get(id) : undefined),
+    async () => (id ? (await db.accounts.get(id)) ?? null : null),
     [id],
     undefined,
   );
@@ -33,7 +31,13 @@ export function AccountEditor() {
   const sectionHome = onCards ? "/credit-cards" : "/accounts";
   const close = () => navigate(editing && id ? `${onCards ? "/credit-cards" : "/accounts"}/${id}` : sectionHome);
 
-  if (editing && !account && ready) {
+  if (editing && account === undefined) {
+    return <Overlay open onClose={close} title="Loading account" variant="sheet" size="md">
+      <p role="status" className="text-sm text-muted">Loading your saved account…</p>
+    </Overlay>;
+  }
+
+  if (editing && (!account || account.deleted_at)) {
     return (
       <Overlay
         open
@@ -60,7 +64,7 @@ export function AccountEditor() {
       key={id ?? "new"}
       open
       onClose={close}
-      account={account}
+      account={account ?? undefined}
       defaultType={onCards && !editing ? "credit" : undefined}
     />
   );

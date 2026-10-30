@@ -23,9 +23,9 @@ export function syncVisual(
   if (status === "syncing") return "syncing";
   if (status === "offline") return "offline";
   if (status === "api-unavailable") return "api-unavailable";
+  if (status === "signed-out") return "signed-out";
   if (conflictCount > 0) return "conflict";
   if (pendingCount > 0) return "pending";
   if (status === "error") return "error";
-  if (status === "signed-out") return "signed-out";
   return "synced";
 }

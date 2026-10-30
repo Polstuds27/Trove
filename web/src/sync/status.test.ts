@@ -23,6 +23,7 @@ describe("syncVisual", () => {
   it("reports failures and expired sessions distinctly", () => {
     expect(syncVisual("error", 0, 0)).toBe("error");
     expect(syncVisual("signed-out", 0, 0)).toBe("signed-out");
+    expect(syncVisual("signed-out", 3, 1)).toBe("signed-out");
   });
 
   it("is synced only with nothing outstanding", () => {

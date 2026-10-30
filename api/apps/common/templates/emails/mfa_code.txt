@@ -1,0 +1,10 @@
+{% autoescape off %}Trove — Your money, clearly.
+
+Your sign-in code: {{ code }}
+
+Enter this code in Trove to finish signing in. It expires in {{ minutes }} minutes and works once.
+Never share your sign-in code with anyone.
+
+Didn't request this code? Don't use or share it. Review your account security directly in Trove if you're concerned.
+
+The Trove team{% endautoescape %}

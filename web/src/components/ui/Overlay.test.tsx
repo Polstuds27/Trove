@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Overlay } from "./Overlay";
 
@@ -14,6 +14,25 @@ function Harness() {
 }
 
 describe("Overlay focus", () => {
+  it("keeps its scroll lock and Escape handler in StrictMode", () => {
+    let closed = 0;
+    render(<StrictMode><Overlay open onClose={() => { closed += 1; }} title="Strict dialog">Content</Overlay></StrictMode>);
+    expect(document.body.style.overflow).toBe("hidden");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(closed).toBe(1);
+  });
+
+  it("closes only the top dialog and keeps the page locked beneath it", () => {
+    function Stacked() {
+      const [confirm, setConfirm] = useState(true);
+      return <><Overlay open onClose={() => { throw new Error("Parent should stay open"); }} title="Parent sheet">Parent content</Overlay>
+        <Overlay open={confirm} onClose={() => setConfirm(false)} title="Confirmation">Confirm content</Overlay></>;
+    }
+    render(<Stacked />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("dialog", { name: "Parent sheet" })).toBeTruthy();
+    expect(document.body.style.overflow).toBe("hidden");
+  });
   it("keeps typing focus across parent re-renders with an unstable onClose", () => {
     render(<Harness />);
     const input = screen.getByRole("textbox", { name: "Name" });
