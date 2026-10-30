@@ -1,9 +1,9 @@
 /**
  * Settings shell.
  *
- * `/settings` is a section index; every sub-route renders inside this layout so
- * the navigation and the back path stay put while the panel changes. On narrow
- * screens the section list becomes a horizontal scroller above the content.
+ * `/settings` is the profile-and-preferences overview from the redesign spec.
+ * Every sub-route keeps the section rail so changing one setting never loses
+ * the way back, while the index shows the summary cards directly.
  */
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
@@ -30,10 +30,10 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
-  { to: "/settings", label: "Overview", hint: "Where everything lives", icon: SlidersHorizontal, end: true },
+  { to: "/settings", label: "Overview", hint: "Profile, preferences and security", icon: SlidersHorizontal, end: true },
   { to: "/settings/profile", label: "Profile", hint: "Name, email, currency", icon: UserRound },
   { to: "/settings/security", label: "Security", hint: "Password and two-factor", icon: ShieldCheck },
-  { to: "/settings/appearance", label: "Appearance", hint: "Theme, density, motion", icon: Palette },
+  { to: "/settings/appearance", label: "Appearance", hint: "Theme and display", icon: Palette },
   { to: "/settings/notifications", label: "Notifications", hint: "What alerts you get", icon: Bell },
   { to: "/settings/currency", label: "Currency", hint: "Base currency and rates", icon: Coins },
   { to: "/settings/financial", label: "Financial", hint: "Month start, formatting", icon: CircleDollarSign },
@@ -45,14 +45,16 @@ const SECTIONS: Section[] = [
 
 export function SettingsPage() {
   const { pathname } = useLocation();
+  const isOverview = pathname === "/settings";
   const current = SECTIONS.find((section) => section.to === pathname) ?? SECTIONS[0];
+
+  if (isOverview) {
+    return <Outlet />;
+  }
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="Settings"
-        subtitle={pathname === "/settings" ? "Everything you can change here" : current.hint}
-      />
+      <PageHeader title="Settings" subtitle={current.hint} />
 
       <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <nav
@@ -65,9 +67,9 @@ export function SettingsPage() {
               to={section.to}
               end={section.end}
               className={({ isActive }) =>
-                `flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:w-full ${
+                `flex shrink-0 items-center gap-2.5 rounded-[14px] px-3 py-2 text-[13px] font-medium transition-colors lg:w-full ${
                   isActive
-                    ? "bg-primary-soft-bg text-primary"
+                    ? "bg-primary text-primary-contrast shadow-pill"
                     : "text-ink-soft hover:bg-surface-sunken hover:text-ink"
                 }`
               }

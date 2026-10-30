@@ -52,8 +52,6 @@ export function QuickAddSheet({ open, onClose }: QuickAddSheetProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, requestedKey]);
 
-  if (!open) return null;
-
   return (
     <Overlay
       open={open}

@@ -85,6 +85,24 @@ def account_mutation(entity_id, **overrides):
     return mutation
 
 
+def test_edit_bank_with_decimal_opening_balance_and_existing_transactions():
+    user = make_user("bank-edit@test.com")
+    client = authed(user)
+    account = Account.objects.create(
+        user=user, name="My account", type="bank", currency="PHP", opening_balance="85.30",
+    )
+    Transaction.objects.create(
+        user=user, type="expense", amount="10.10", currency="PHP", from_account=account,
+    )
+    mutation = account_mutation(account.id, op="update", base_version=account.version)
+    mutation["payload"].update(bank_name="BDO Unibank", opening_balance=85.3)
+    response = push(client, [mutation])
+    assert response.json()["results"][0]["status"] == "accepted"
+    account.refresh_from_db()
+    assert account.bank_name == "BDO Unibank"
+    assert str(account.current_balance) == "75.20"
+
+
 def test_push_create_commits_and_pull_replays_it():
     """The canonical lifecycle: push accepted → row in DB → pull replays."""
     user = make_user()
@@ -112,6 +130,28 @@ def test_push_create_commits_and_pull_replays_it():
     assert ("account", str(account_id)) in entities
     assert ("transaction", str(tx_id)) in entities
     assert body["server_seq"] > 0
+
+
+def test_account_bank_name_survives_sync_and_rest():
+    user = make_user("bank-name@test.com")
+    client = authed(user)
+    account_id = uuid.uuid4()
+    mutation = account_mutation(account_id)
+    mutation["payload"]["bank_name"] = "GoTyme Bank"
+    response = push(client, [mutation])
+    assert response.json()["results"][0]["status"] == "accepted"
+    assert Account.objects.get(id=account_id).bank_name == "GoTyme Bank"
+    changes = pull(client).json()["changes"]
+    account_change = next(change for change in changes if change["entity_id"] == str(account_id))
+    assert account_change["payload"]["bank_name"] == "GoTyme Bank"
+    response = client.get(f"/api/v1/finance/accounts/{account_id}/")
+    assert response.status_code == 200
+    assert response.json()["bank_name"] == "GoTyme Bank"
+    response = client.patch(
+        f"/api/v1/finance/accounts/{account_id}/", {"bank_name": None}, format="json",
+    )
+    assert response.status_code == 200
+    assert response.json()["bank_name"] is None
 
 
 def test_created_at_keeps_device_birth_moment_not_receipt_time():

@@ -2,14 +2,14 @@
  * `/settings/devices` — sessions issued to your account.
  *
  * Each row is an outstanding refresh token, which is what a "device" really is
- * here. Revoking one invalidates it immediately on the next request.
+ * here. Removing one prevents its refresh token from renewing access.
  */
 import { useCallback, useEffect, useState } from "react";
 import { LogOut, MonitorSmartphone, RefreshCw } from "lucide-react";
-import { ApiError, apiFetch } from "../../api/client";
-import { Alert, Badge, Button, Card, EmptyState, useToast } from "../../components/ui";
+import { ApiError, apiFetch, getRefreshToken } from "../../api/client";
+import { Alert, Badge, Button, Card, ConfirmOverlay, EmptyState, useToast } from "../../components/ui";
 import { formatDateTime } from "../../design/format";
-import { getAccessToken } from "../../api/client";
+import { useSync } from "../../sync/SyncContext";
 import { Panel } from "./Panel";
 
 interface Session {
@@ -17,33 +17,52 @@ interface Session {
   id: string | number;
   created_at: string;
   expires_at: string;
+  jti: string;
+  device_name?: string;
+  signed_in_at?: string;
 }
 
-/** Short, sortable-looking label that never assumes the id is a string. */
-function sessionLabel(id: string | number): string {
-  return String(id).slice(0, 8);
+/** Match this browser's refresh token to its session row for display. */
+function currentSessionId(): string | null {
+  // Display matching only; the server still verifies and owns every session.
+  try {
+    const payload = getRefreshToken()?.split(".")[1];
+    if (!payload) return null;
+    const claims = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { jti?: string };
+    return claims.jti ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function DevicesSection() {
   const toast = useToast();
+  const { lastSyncedAt } = useSync();
   const [sessions, setSessions] = useState<Session[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Session | null>(null);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
+    setLoading(true);
     try {
       const data = await apiFetch<Session[] | Record<string, unknown>>("/auth/sessions/");
       setSessions(Array.isArray(data) ? data.filter((row) => row != null) : []);
+      setCurrentId(currentSessionId());
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't load sessions.");
       setSessions((current) => current ?? []);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, lastSyncedAt]);
 
   async function revoke(id: Session["id"]) {
     setBusy(true);
@@ -53,7 +72,8 @@ export function DevicesSection() {
         body: JSON.stringify({ id }),
       });
       setSessions((current) => (current ?? []).filter((row) => row.id !== id));
-      toast.push({ tone: "success", title: "Session revoked" });
+      setSelected(null);
+      toast.push({ tone: "success", title: "Device access removed", description: "This session can no longer renew its access." });
     } catch (err) {
       toast.push({
         tone: "error",
@@ -65,19 +85,18 @@ export function DevicesSection() {
     }
   }
 
-  const currentToken = getAccessToken();
-
   return (
     <div className="space-y-4">
       <Panel
-        title="Active sessions"
-        description="Every browser or phone that can refresh a token for your account."
+        title="Your devices"
+        description="Review active sign-ins and remove access for a device you no longer use."
         footer={
           <Button
             variant="secondary"
             size="sm"
             icon={<RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />}
-            loading={busy}
+            loading={loading}
+            disabled={busy || loading}
             onClick={() => void load()}
           >
             Refresh
@@ -96,11 +115,11 @@ export function DevicesSection() {
           <EmptyState
             compact
             icon={<MonitorSmartphone className="h-6 w-6" />}
-            title={error ? "Sessions unavailable" : "No other sessions"}
+            title={error ? "Devices unavailable" : "No active sessions"}
             description={
               error
-                ? "You appear to be signed out on the server, or the request failed."
-                : "Sign in on another device and it will appear here."
+                ? "Your saved data is still available here. Reconnect or restore your session to view devices."
+                : "Active sign-ins will appear here."
             }
             action={
               <Button variant="secondary" size="sm" onClick={() => void load()}>
@@ -115,25 +134,25 @@ export function DevicesSection() {
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-sm font-medium text-ink">
                     <MonitorSmartphone aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
-                    <span className="tabular truncate">Session {sessionLabel(session.id)}</span>
+                    <span className="truncate">{session.device_name || "Browser session"}</span>
                   </p>
                   <p className="tabular mt-0.5 text-xs text-muted">
-                    Started {formatDateTime(session.created_at)} · expires{" "}
+                    Signed in {formatDateTime(session.signed_in_at ?? session.created_at)} · renews until{" "}
                     {formatDateTime(session.expires_at)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {currentToken && session.id && (
-                    <Badge tone="neutral">Active</Badge>
+                  {currentId === session.jti && (
+                    <Badge tone="primary">This device</Badge>
                   )}
                   <Button
                     variant="ghost"
                     size="sm"
                     icon={<LogOut className="h-3.5 w-3.5" />}
-                    disabled={busy}
-                    onClick={() => void revoke(session.id)}
+                    disabled={busy || loading || currentId === session.jti}
+                    onClick={() => setSelected(session)}
                   >
-                    Revoke
+                    Remove
                   </Button>
                 </div>
               </li>
@@ -144,10 +163,16 @@ export function DevicesSection() {
 
       <Card className="p-4">
         <p className="text-sm text-muted">
-          Revoking a session blacklists its refresh token. The device is signed out the next time
-          it tries to renew — this device included, if you revoke your own.
+          Removing a device stops this session from renewing. Its existing access can remain valid
+          for up to 60 minutes. Use Profile → Sign out to end the session on this device.
         </p>
       </Card>
+      <ConfirmOverlay
+        open={selected !== null} onClose={() => setSelected(null)} busy={busy}
+        title="Remove this device?" confirmLabel="Remove device"
+        message={`Remove access for ${selected?.device_name || "this browser session"}? It will need to sign in again when its current access expires. Your other devices and their saved data are unaffected.`}
+        onConfirm={() => { if (selected) void revoke(selected.id); }}
+      />
     </div>
   );
 }

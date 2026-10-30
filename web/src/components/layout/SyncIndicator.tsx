@@ -1,5 +1,6 @@
 import { CircleAlert, CloudOff, CloudSync, RefreshCw, WifiOff, type LucideIcon } from "lucide-react";
 import { useSync } from "../../sync/SyncContext";
+import { useSessionRecovery } from "../../auth/SessionRecovery";
 import { syncVisual, type SyncVisual } from "../../sync/status";
 import { formatRelativeTime } from "../../design/format";
 import { IconButton } from "../ui/Button";
@@ -42,6 +43,7 @@ function visualLabel(visual: SyncVisual, pendingCount: number): string {
  * It never exposes queues, sequence numbers or retry counts (§6/§47).
  */
 export function SyncIndicator({ compact = false }: { compact?: boolean }) {
+  const requestRecovery = useSessionRecovery();
   const { status, pendingCount, conflicts, lastSyncedAt, syncNow } = useSync();
   const visual = syncVisual(status, pendingCount, conflicts.length);
   const { Icon, className } = PRESENTATION[visual];
@@ -71,8 +73,8 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <IconButton
-        label={visual === "syncing" ? "Syncing" : visual === "error" ? "Retry sync" : "Sync now"}
-        onClick={() => void syncNow()}
+        label={visual === "signed-out" ? "Sign in to resume syncing" : visual === "syncing" ? "Syncing" : visual === "error" ? "Retry sync" : "Sync now"}
+        onClick={() => visual === "signed-out" ? requestRecovery() : void syncNow()}
         disabled={status === "syncing"}
         className={className}
       >
@@ -89,6 +91,7 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
 
 /** Verbose variant used in Settings, where the explanation has room to breathe. */
 export function SyncStatusPanel() {
+  const requestRecovery = useSessionRecovery();
   const { status, pendingCount, conflicts, lastSyncedAt, syncNow } = useSync();
   const visual = syncVisual(status, pendingCount, conflicts.length);
   const { Icon, className } = PRESENTATION[visual];
@@ -125,7 +128,7 @@ export function SyncStatusPanel() {
         <p className="text-sm font-semibold text-ink">{label}</p>
         <p className="mt-0.5 text-sm leading-relaxed text-muted">{detail}</p>
       </div>
-      <IconButton label="Sync now" onClick={() => void syncNow()} disabled={status === "syncing"}>
+      <IconButton label={visual === "signed-out" ? "Sign in to resume syncing" : "Sync now"} onClick={() => visual === "signed-out" ? requestRecovery() : void syncNow()} disabled={status === "syncing"}>
         <RefreshCw className={`h-4 w-4 ${status === "syncing" ? "animate-spin" : ""}`} />
       </IconButton>
     </div>

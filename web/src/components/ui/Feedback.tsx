@@ -33,7 +33,7 @@ export function EmptyState({
 }) {
   const body = (
     <div
-      className={`flex flex-col items-center justify-center text-center ${
+      className={`flex flex-col items-center justify-center text-center animate-rise ${
         compact ? "gap-2 py-8" : glass ? "gap-4 px-6 py-12" : "gap-3 py-14"
       } ${className}`}
     >
@@ -147,7 +147,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className={`flex flex-col items-center justify-center gap-3 text-center ${compact ? "py-6" : "py-12"} ${className}`}
+      className={`flex flex-col items-center justify-center gap-3 text-center animate-rise ${compact ? "py-6" : "py-12"} ${className}`}
     >
       <Mascot state={preset.state} size={compact ? 90 : 150} />
       <div className="max-w-sm space-y-1">
@@ -198,7 +198,7 @@ export function Alert({
   }[tone];
 
   return (
-    <div className={`flex items-start gap-2.5 rounded-[18px] px-4 py-3 ${cls} ${className}`}>
+    <div className={`flex animate-rise items-start gap-2.5 rounded-[18px] px-4 py-3 ${cls} ${className}`}>
       <span aria-hidden="true" className="mt-0.5 shrink-0">
         {icon ?? defaultIcon}
       </span>

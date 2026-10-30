@@ -110,12 +110,12 @@ export function Toggle({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-primary" : "bg-surface-sunken"
+        checked ? "bg-primary dark:bg-sage" : "bg-surface-sunken"
       }`}
     >
       <span
         aria-hidden="true"
-        className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-base ease-smooth dark:bg-cream ${
           checked ? "translate-x-5" : "translate-x-0"
         }`}
       />
@@ -160,7 +160,7 @@ export function StatCard({
       <button
         type="button"
         onClick={onClick}
-        className={`trove-card px-5 py-4 text-left transition-transform hover:-translate-y-0.5 ${className}`}
+        className={`trove-card px-5 py-4 text-left transition-transform duration-base ease-smooth hover:-translate-y-0.5 active:translate-y-0 ${className}`}
       >
         {body}
       </button>

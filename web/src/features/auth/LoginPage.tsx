@@ -70,6 +70,7 @@ export function LoginPage() {
           onChange={(event) => setEmail(event.target.value)}
           leadingIcon={<Mail aria-hidden="true" className="h-4 w-4" />}
           placeholder="you@example.com"
+          className={error ? "input-error" : ""}
         />
         <div className="relative">
           <Input
@@ -81,7 +82,7 @@ export function LoginPage() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             leadingIcon={<KeyRound aria-hidden="true" className="h-4 w-4" />}
-            className="pr-11"
+            className={`pr-11 ${error ? "input-error" : ""}`}
           />
           <IconButton
             label={reveal ? "Hide password" : "Show password"}
@@ -92,7 +93,7 @@ export function LoginPage() {
           </IconButton>
         </div>
         <div className="-mt-1 text-right">
-          <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+          <Link to="/forgot-password" className="text-[12px] font-semibold text-primary hover:underline">
             Forgot password?
           </Link>
         </div>

@@ -8,7 +8,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Save, Trash2 } from "lucide-react";
 import { ApiError, apiFetch } from "../../api/client";
-import { useAuth, type UserProfile } from "../../auth/AuthContext";
+import { useAuth } from "../../auth/AuthContext";
 import { useSync } from "../../sync/SyncContext";
 import { Button, ConfirmOverlay, Input, Select, useToast } from "../../components/ui";
 import { CURRENCIES } from "../../design/format";
@@ -17,9 +17,9 @@ import { usePreferences } from "./preferences";
 import { Panel } from "./Panel";
 
 export function ProfileSection() {
-  const { profile, refreshProfile, logout } = useAuth();
+  const { profile, updateProfile, logout } = useAuth();
   const { pendingCount } = useSync();
-  const { preferences, update } = usePreferences();
+  const { preferences } = usePreferences();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -27,16 +27,21 @@ export function ProfileSection() {
   const [lastName, setLastName] = useState("");
   const [currency, setCurrency] = useState(preferences.baseCurrency);
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const profileFirstName = profile?.first_name;
+  const profileLastName = profile?.last_name;
+  const profileCurrency = profile?.preferred_currency;
 
   useEffect(() => {
-    if (!profile) return;
-    setFirstName(profile.first_name);
-    setLastName(profile.last_name);
-    setCurrency(profile.preferred_currency);
-  }, [profile]);
+    if (profileCurrency === undefined) return;
+    setFirstName(profileFirstName ?? "");
+    setLastName(profileLastName ?? "");
+    setCurrency(profileCurrency);
+    setLoaded(true);
+  }, [profileFirstName, profileLastName, profileCurrency]);
 
   // Offline the live profile never arrives: initialise the form from the
   // last-known cached identity so the screen still shows who is signed in.
@@ -47,8 +52,9 @@ export function ProfileSection() {
       if (cancelled || !cached) return;
       setFirstName((current) => current || cached.first_name);
       setLastName((current) => current || cached.last_name);
-      setCurrency((current) => current || cached.preferred_currency);
-    });
+      setCurrency(cached.preferred_currency);
+      setLoaded(true);
+    }).catch(() => setError("Couldn't load your saved profile. Reconnect and try again."));
     return () => {
       cancelled = true;
     };
@@ -56,20 +62,15 @@ export function ProfileSection() {
 
   async function save(event?: FormEvent) {
     event?.preventDefault();
+    if (!loaded || busy) return;
     setError(null);
     setBusy(true);
     try {
-      const updated = await apiFetch<UserProfile>("/auth/profile/", {
-        method: "PATCH",
-        body: JSON.stringify({
+      const updated = await updateProfile({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           preferred_currency: currency,
-        }),
       });
-      await refreshProfile();
-      // Keep the local reporting currency in step with the server profile.
-      if (currency !== preferences.baseCurrency) await update({ baseCurrency: currency });
       toast.push({
         tone: "success",
         title: "Profile updated",
@@ -118,7 +119,7 @@ export function ProfileSection() {
         title="Your details"
         description="Shown on this device and on every device you sign in from."
         footer={
-          <Button variant="primary" size="sm" icon={<Save className="h-4 w-4" />} loading={busy} onClick={() => void save()}>
+          <Button variant="primary" size="sm" icon={<Save className="h-4 w-4" />} disabled={!loaded} loading={busy} onClick={() => void save()}>
             Save
           </Button>
         }
@@ -155,7 +156,8 @@ export function ProfileSection() {
             label="Preferred currency"
             value={currency}
             onChange={(event) => setCurrency(event.target.value)}
-            hint="Used for your profile and as the starting point for this device's reports."
+            disabled={!loaded || busy}
+            hint="Used for reports and totals on every device. Reconnect to save changes."
           >
             {CURRENCIES.map((code) => (
               <option key={code} value={code}>

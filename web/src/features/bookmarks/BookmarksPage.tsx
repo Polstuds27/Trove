@@ -4,24 +4,27 @@
  * The transactions you flagged for later — receipts to check, charges to
  * dispute, anything worth finding again without remembering when it happened.
  * Flagging is a local row edit, so it syncs like any other change.
+ *
+ * With nothing flagged the page is one tall glass panel, mascot-led, so the
+ * empty state still feels like the rest of Trove rather than a dead end.
  */
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import {
+  Avatar,
   Button,
-  Card,
-  EmptyState,
-  LinkButton,
+  GlassPanel,
+  Mascot,
   PageHeader,
-  SegmentedControl,
+  Pill,
+  SurfaceCard,
 } from "../../components/ui";
-import { MASCOT_BY_STATE } from "../../components/ui/mascots";
 import type { LocalTransaction } from "../../db/types";
 import { byTxNewest, formatMoney, formatRelativeDay } from "../../design/format";
-import { categoryIcon } from "../../design/icons";
 import { useLocalData } from "../analytics/useLocalData";
 import { toggleBookmark } from "../../db/repositories";
+import { transactionAccounts, transactionTitle } from "../transactions/TransactionList";
 
 type Sort = "recent" | "amount";
 
@@ -38,122 +41,116 @@ export function BookmarksPage() {
   }, [dataset.transactions, sort]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-[18px]">
       <PageHeader
         title="Bookmarks"
-        subtitle={`${rows.length} flagged transaction${rows.length === 1 ? "" : "s"}`}
-        leading={
-          <button
-            type="button"
-            aria-label="Back"
-            onClick={() => navigate(-1)}
-            className="mt-1 text-muted hover:text-ink"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-        }
-        tabs={
-          rows.length > 1 ? (
-            <SegmentedControl
-              size="sm"
-              options={[
-                { id: "recent", label: "Most recent" },
-                { id: "amount", label: "Largest first" },
-              ]}
-              value={sort}
-              onChange={setSort}
-              ariaLabel="Sort bookmarks"
-            />
-          ) : undefined
+        subtitle={
+          rows.length === 0
+            ? "Flagged transactions live here"
+            : `${rows.length} flagged transaction${rows.length === 1 ? "" : "s"}`
         }
       />
 
       {ready && rows.length === 0 ? (
-        <Card>
-          <EmptyState
-            mascot={MASCOT_BY_STATE.emptyBookmarks}
-            title="No bookmarks yet"
-            description="Flag a transaction whenever you want to find it again — a charge to dispute, a receipt to file, a payment to question. Open any transaction and tap the bookmark, or use the row action in the list."
-            action={
-              <Button variant="primary" onClick={() => navigate("/transactions")}>
-                Browse transactions
-              </Button>
-            }
-            secondaryAction={<LinkButton to="/search">Search instead</LinkButton>}
-          />
-        </Card>
+        <GlassPanel className="relative flex min-h-[520px] flex-col items-center justify-center overflow-hidden px-6 py-16 text-center lg:min-h-[600px]">
+          <Mascot state="bookmarks" size={190} className="mb-3" />
+          <h2 className="text-[26px] font-semibold leading-8 tracking-[-0.025em] text-primary sm:text-[30px]">
+            Nothing bookmarked yet
+          </h2>
+          <p className="mt-2 max-w-[32ch] text-[13.5px] leading-6 text-muted">
+            Bookmark a transaction to find it again quickly.
+          </p>
+          <Button
+            variant="primary"
+            className="mt-5"
+            onClick={() => navigate("/transactions")}
+          >
+            Browse transactions
+          </Button>
+        </GlassPanel>
       ) : (
-        <Card className="divide-y divide-line">
-          {rows.map((tx) => (
-            <Row key={tx.id} tx={tx} onOpen={() => navigate(`/transactions/${tx.id}`)} />
-          ))}
-        </Card>
-      )}
+        <>
+          {rows.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Pill active={sort === "recent"} onClick={() => setSort("recent")}>
+                Most recent
+              </Pill>
+              <Pill active={sort === "amount"} onClick={() => setSort("amount")}>
+                Largest first
+              </Pill>
+            </div>
+          )}
 
-      <Card>
-        <div className="px-4 py-3 text-sm text-muted">
-          Bookmarks are stored with the transaction itself, so they follow you between devices on
-          the next sync and are readable while offline.
-        </div>
-      </Card>
+          <SurfaceCard className="overflow-hidden">
+            <header className="flex items-baseline justify-between gap-3 border-b border-line/70 px-5 py-4 sm:px-6">
+              <h2 className="text-[16px] font-semibold leading-6 text-ink">Saved for later</h2>
+              <span className="tabular text-[12px] text-muted">{rows.length} total</span>
+            </header>
+            <div className="trove-hairline-list">
+              {rows.map((tx) => (
+                <BookmarkRow
+                  key={tx.id}
+                  tx={tx}
+                  onOpen={() => navigate(`/transactions/${tx.id}`)}
+                />
+              ))}
+            </div>
+          </SurfaceCard>
+
+          <p className="px-1 text-[12px] leading-5 text-muted">
+            Bookmarks are stored with the transaction itself, so they follow you between devices
+            on the next sync and stay readable offline.
+          </p>
+        </>
+      )}
     </div>
   );
 }
 
-function Row({ tx, onOpen }: { tx: LocalTransaction; onOpen: () => void }) {
+function BookmarkRow({ tx, onOpen }: { tx: LocalTransaction; onOpen: () => void }) {
   const { lookups } = useLocalData();
   const category = tx.category_id ? lookups.category.get(tx.category_id) : undefined;
-  const Icon = categoryIcon(category?.icon ?? null, category?.name);
-  const from = tx.from_account_id
-    ? (lookups.account.get(tx.from_account_id)?.name ?? "")
-    : "";
-  const to = tx.to_account_id ? (lookups.account.get(tx.to_account_id)?.name ?? "") : "";
+  const title = transactionTitle(tx, lookups);
+  const meta = [category?.name ?? (tx.type === "income" ? "Income" : tx.type === "expense" ? "Expense" : "Transfer"), formatRelativeDay(tx.date)]
+    .filter(Boolean)
+    .join(" · ");
+  const accounts = transactionAccounts(tx, lookups);
+  const sign = tx.type === "income" ? "+" : tx.type === "expense" ? "−" : "";
+  const tone =
+    tx.type === "income" ? "text-income" : tx.type === "expense" ? "text-ink" : "text-transfer";
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <span
-          aria-hidden="true"
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-            tx.type === "income"
-              ? "bg-income-soft text-income"
-              : tx.type === "expense"
-                ? "bg-expense-soft text-expense"
-                : "bg-transfer-soft text-transfer"
-          }`}
-        >
-          <Icon className="h-4 w-4" />
+    <div className="trove-row group">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
+      >
+        <Avatar name={title} size={38} />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5">
+            <span className="truncate text-[15px] font-semibold leading-5 text-ink group-hover:text-primary">
+              {title}
+            </span>
+            <Star aria-label="Bookmarked" className="h-3 w-3 shrink-0 fill-current text-warning" />
+          </span>
+          <span className="mt-0.5 block truncate text-[13px] leading-[18px] text-muted">{meta}</span>
         </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-medium text-ink">
-            {tx.notes || category?.name || tx.type}
-          </span>
-          <span className="block truncate text-xs text-muted">
-            {formatRelativeDay(tx.date)}
-            {from || to ? ` · ${from}${to ? ` → ${to}` : ""}` : ""}
-          </span>
+        <span className="hidden w-[9.5rem] shrink-0 truncate text-[13px] text-muted lg:block">
+          {accounts}
+        </span>
+        <span className={`tabular shrink-0 text-right text-[14px] font-semibold ${tone}`}>
+          {sign}
+          {formatMoney(Math.abs(tx.amount), tx.currency)}
         </span>
       </button>
-
-      <span
-        className={`tabular shrink-0 text-sm font-semibold ${
-          tx.type === "income"
-            ? "text-income"
-            : tx.type === "expense"
-              ? "text-expense"
-              : "text-ink"
-        }`}
-      >
-        {tx.type === "income" ? "+" : tx.type === "expense" ? "−" : ""}
-        {formatMoney(Math.abs(tx.amount), tx.currency)}
-      </span>
 
       <button
         type="button"
         aria-label="Remove bookmark"
         title="Remove bookmark"
         onClick={() => void toggleBookmark(tx.id)}
-        className="shrink-0 rounded-lg p-1.5 text-warning transition-colors hover:bg-warning-soft"
+        className="icon-btn shrink-0 text-warning hover:bg-warning-soft"
       >
         <Star className="h-4 w-4 fill-current" />
       </button>

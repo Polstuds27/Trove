@@ -26,10 +26,16 @@ export const MASCOTS = {
     note: "Assigned from file order; confirm it shows a piggy bank",
   },
   tablet: {
-    name: "Holding a tablet or card",
+    name: "Holding a tablet",
+    src: "/mascot/ultra-refined/Working.png",
+    verified: true,
+    note: "Working.png shows the mascot holding a dark tablet",
+  },
+  card: {
+    name: "Holding a card",
     src: "/mascot/ultra-refined/Board.png",
-    verified: false,
-    note: "Assigned from file order; confirm it shows a tablet/card",
+    verified: true,
+    note: "Board.png shows a blank card held in both hands",
   },
   cheering: {
     name: "Arms up, cheering",
@@ -69,10 +75,10 @@ export const MASCOTS = {
     verified: true,
   },
   phone: {
-    name: "Holding a phone",
+    name: "Holding a phone or tablet",
     src: "/mascot/ultra-refined/Working.png",
-    verified: false,
-    note: "Assigned from file order; confirm it shows a phone",
+    verified: true,
+    note: "Working.png is the closest available pose: the mascot holds a tablet",
   },
   celebration: {
     name: "Celebrating",
@@ -109,6 +115,11 @@ export const MASCOTS = {
     src: "/mascot/ultra-refined/Sadder.png",
     verified: true,
   },
+  search: {
+    name: "Search",
+    src: "/mascot/ultra-refined/Search.png",
+    verified: true,
+  },
 } as const satisfies Record<string, MascotSprite>;
 
 export type MascotName = keyof typeof MASCOTS;
@@ -130,10 +141,11 @@ export const MASCOT_STATES = {
   overviewInsight: "surprised",
   transactions: "surprised",
   transactionsEmpty: "tablet",
-  searchEmpty: "tablet",
+  searchEmpty: "search",
+  search: "search",
   statistics: "tablet",
   installments: "tablet",
-  bookmarks: "tablet",
+  bookmarks: "card",
   recurring: "sleeping",
   offline: "sleeping",
   createAccount: "cheering",
@@ -147,6 +159,7 @@ export const MASCOT_STATES = {
   loading: "tablet",
   error: "sadder",
   idle: "idle",
+  working: "phone",
   conflicts: "sitting",
   landingRelaxed: "relaxed",
   notFound: "sitting",

@@ -11,6 +11,7 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
+  Eye,
   ListFilter,
   Pencil,
   Plus,
@@ -23,6 +24,7 @@ import {
   DetailRow,
   EmptyState,
   IconButton,
+  MascotTipCard,
   Overlay,
   PageHeader,
   Pill,
@@ -32,6 +34,7 @@ import {
   useToast,
 } from "../../components/ui";
 import { byTxNewest, formatDateTime, formatMoney, formatMonth, formatRelativeDay } from "../../design/format";
+import { categoryIcon } from "../../design/icons";
 import type { LocalTransaction } from "../../db/types";
 import { deleteTransaction, toggleBookmark } from "../../db/repositories";
 import { useLocalData } from "../analytics/useLocalData";
@@ -299,6 +302,8 @@ export function TransactionsPage() {
   function ledgerRow(tx: LocalTransaction, onSelect: (tx: LocalTransaction) => void, compact = false) {
     const title = transactionTitle(tx, lookups);
     const category = tx.category_id ? lookups.category.get(tx.category_id)?.name : null;
+    const categoryObj = tx.category_id ? lookups.category.get(tx.category_id) : undefined;
+    const Icon = categoryIcon(categoryObj?.icon ?? null, categoryObj?.name);
     const account = transactionAccounts(tx, lookups);
     const description = [
       category ?? (tx.type === "income" ? "Income" : tx.type === "expense" ? "Expense" : "Transfer"),
@@ -322,8 +327,8 @@ export function TransactionsPage() {
           onClick={() => onSelect(tx)}
           className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
         >
-          <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-sage-light text-[12px] font-semibold text-primary dark:bg-primary-soft">
-            {title.slice(0, 2).toUpperCase()}
+          <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-surface-sunken text-primary">
+            <Icon className="h-[18px] w-[18px]" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-semibold leading-5 text-ink group-hover:text-primary">
@@ -391,6 +396,13 @@ export function TransactionsPage() {
         </dl>
 
         <div className="mt-6 flex items-center gap-2">
+          <Button
+            variant="secondary"
+            icon={<Eye className="h-4 w-4" />}
+            onClick={() => navigate(`/transactions/${tx.id}`)}
+          >
+            View
+          </Button>
           <Button
             variant="primary"
             icon={<Pencil className="h-4 w-4" />}
@@ -480,12 +492,16 @@ export function TransactionsPage() {
               />
             )}
           </SurfaceCard>
-          <div className="flex justify-center pt-3">
-            <img
-              src="/mascot/ultra-refined/Curios.png"
-              alt=""
-              className="pointer-events-none h-[150px] w-[150px] object-contain"
-              draggable={false}
+          <div className="pt-3">
+            <MascotTipCard
+              title="Quick tip"
+              lines={[
+                "Select a transaction to see its details, then edit or delete it.",
+                "Use the bookmark to save a transaction, then find it under the Saved filter.",
+              ]}
+              mascotState="transactions"
+              storageKey="tip-dismissed:transactions"
+              mascotSize={96}
             />
           </div>
         </div>
@@ -494,6 +510,17 @@ export function TransactionsPage() {
       {/* Mobile grouped ledger. */}
       <div className="space-y-4 pb-2 lg:hidden">
         <SurfaceCard className="p-4">{filterBar(true)}</SurfaceCard>
+
+        <MascotTipCard
+          title="Quick tip"
+          lines={[
+            "Select a transaction to see its details, then edit or delete it.",
+            "Use the bookmark to save a transaction, then find it under the Saved filter.",
+          ]}
+          mascotState="transactions"
+          storageKey="tip-dismissed:transactions"
+          mascotSize={60}
+        />
 
         {filtered.length === 0 ? (
           <SurfaceCard>

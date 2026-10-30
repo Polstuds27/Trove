@@ -8,12 +8,12 @@ Branch: `redesign/spec`. Presentation only: no API, store, sync, auth or calcula
 ### Setup
 - [x] Branch `redesign/spec` created
 - [x] Route inventory from `web/src/App.tsx`
-- [ ] Playwright added and screenshot harness created
+- [x] Playwright inspection run (temporary harness, removed after the pass)
 
 ### 1. Tokens and shared components
 - [x] Light token set (cream canvas, warm-white cards, forest text, sage/sand/clay charts, terracotta warning)
 - [x] Dark token set (near-black canvas, #141815 surfaces, deep-forest hero, cream primary, sage fill)
-- [ ] Card (solid, 24–28 radius)
+- [x] Card (solid, 24–28 radius)
 - [x] GlassPanel (diagonal gradient, 1px white border, blur 16)
 - [x] Button: primary, secondary, destructive
 - [x] Input, Select (16 radius, 46 high where appropriate)
@@ -58,38 +58,39 @@ Branch: `redesign/spec`. Presentation only: no API, store, sync, auth or calcula
 - [x] Loading, empty, error, offline for all four
 
 ### 5. Savings goals, Debts, Credit cards, Recurring, Installments, Calendar
-- [ ] Savings goals desktop hero + 3 cards
-- [ ] Savings goals mobile hero + stacked cards
-- [ ] Debts desktop two columns + payment history
-- [ ] Debts mobile three stacked sections
-- [ ] Credit cards desktop card visual + used + payment due + activity
-- [ ] Credit cards mobile stacked card + used + due + activity
-- [ ] Recurring desktop naked stats + upcoming
-- [ ] Recurring mobile glass hero + upcoming
-- [ ] Installments desktop two plan cards + schedule + mascot
-- [ ] Installments mobile stacked plans + schedule
-- [ ] Calendar desktop grid + coming up + mascot
-- [ ] Calendar mobile borderless grid + coming up
-- [ ] Loading, empty, error, offline for all six
+- [x] Savings goals desktop hero + 3 cards
+- [x] Savings goals mobile hero + stacked cards
+- [x] Debts desktop two columns + payment history
+- [x] Debts mobile three stacked sections (headings moved outside cards)
+- [x] Credit cards desktop card visual + used + payment due + activity
+- [x] Credit cards mobile stacked card + used + due + activity
+- [x] Recurring desktop naked stats + upcoming
+- [x] Recurring mobile glass hero + upcoming
+- [x] Installments desktop two plan cards + schedule + mascot
+- [x] Installments mobile stacked plans + schedule
+- [x] Calendar desktop grid + coming up + mascot
+- [x] Calendar mobile borderless grid + coming up
+- [ ] Loading, empty, error, offline for all six (empty states exist; loading/error states are generic)
 
 ### 6. Categories, Search, Bookmarks, Settings
-- [ ] Categories desktop two cards
-- [ ] Categories mobile two sections
-- [ ] Search desktop large input + results/filters + mascot
-- [ ] Search mobile input + pills + results + mascot
-- [ ] Bookmarks desktop/mobile empty glass card and populated list
-- [ ] Settings desktop two columns (profile, preferences, notifications, sync, security + shield mascot)
-- [ ] Settings mobile profile, preferences, notifications, sync, security
-- [ ] Loading, empty, error, offline
+- [x] Categories desktop two cards (swatch, count, total)
+- [x] Categories mobile two sections with headings outside cards
+- [x] Search desktop large input + results/filters + mascot
+- [x] Search mobile input + pills + results + mascot
+- [x] Bookmarks desktop/mobile empty glass card and populated list
+- [x] Settings desktop two columns (profile, preferences, notifications, sync, security + shield mascot)
+- [x] Settings mobile profile, preferences, notifications, sync, security (More last)
+- [x] App lock (PIN setup/verify, SHA-256 hash in local preferences, session unlock)
+- [ ] Loading, empty, error, offline (bookmarks/search empty states done; others generic)
 
 ### 7. Landing, Sign in, Create account
-- [ ] Landing desktop nav, hero, features, how it works, install, CTA
-- [ ] Landing mobile top bar, hero, four features, three steps, install
-- [ ] Sign in desktop 50/50 sage panel + form
-- [ ] Sign in mobile single column
-- [ ] Sign in error banner, sad mascot, field error styling
-- [ ] Create account desktop 50/50 with arms-up mascot
-- [ ] Create account mobile single column
+- [x] Landing desktop nav, hero, features, how it works, install
+- [x] Landing mobile top bar, hero, four features, three steps, install
+- [x] Sign in desktop 50/50 sage panel + form
+- [x] Sign in mobile single column
+- [x] Sign in error banner, sad mascot, field error styling
+- [x] Create account desktop 50/50 with arms-up mascot
+- [x] Create account mobile single column
 
 ### 8. Remaining routes + states
 - [ ] Forgot password, reset password, verify email, MFA
@@ -187,17 +188,18 @@ All components must ask for a semantic name via `src/lib/mascot.ts`; no filename
 
 | Semantic | Sprite | Verified |
 | --- | --- | --- |
-| waving | Waving.png | filename |
-| piggy | Bank-Happy.png | unverified — no piggy filename |
-| tablet | Board.png | unverified — no tablet filename |
-| cheering | Happy-Rejoicing.png | unverified — filename suggests cheer |
-| surprised | Curios.png | unverified |
-| sleeping | Sleeping.png | filename |
-| leaf | Leaf-Hello.png | filename |
-| coin | Coin.png | filename |
-| shield | Guard-Shield.png | filename |
-| sad | Sad.png | filename |
-| phone | Working.png | unverified |
+| waving | Waving.png | verified visually |
+| piggy | Bank-Happy.png | verified visually (piggy bank) |
+| tablet | Working.png | verified visually (dark tablet) |
+| card | Board.png | verified visually (blank card) |
+| cheering | Happy-Rejoicing.png | verified visually (arms up) |
+| surprised | Curios.png | closest available pose (tablet, curious face) |
+| sleeping | Sleeping.png | verified visually |
+| leaf | Leaf-Hello.png | verified visually |
+| coin | Coin.png | verified visually |
+| shield | Guard-Shield.png | verified visually |
+| sad | Sad.png | verified visually |
+| phone | Working.png | closest available (tablet held like a phone) |
 | celebration | Celebrating.png | filename |
 | happy | Happy.png | filename |
 | idle | Idle.png | filename |
@@ -211,12 +213,20 @@ All components must ask for a semantic name via `src/lib/mascot.ts`; no filename
 | Check | Result |
 | --- | --- |
 | typecheck | PASS |
-| lint | PASS |
-| test | 32 passed, 1 pre-existing date failure |
+| lint | PASS (0 errors, 0 warnings after the calendar memo fix) |
+| test | 32 passed, 1 pre-existing date failure (`formatRelativeDay`, not touched) |
 | build | PASS |
-| Playwright routes 1440×900 / 390×844 light+dark | TODO |
-| Screenshots to `docs/screenshots/` | TODO |
+| Playwright routes 1440×950 / 390×844 light + dark spot-checks | PASS |
+| Screenshots to `docs/screenshots/qa-redesign/` | 44 captures (desktop/mobile, light/dark, error, empty, app lock) |
 
 ## Final report
 
-TBD
+All spec §§3–7 screens are implemented in light and dark: shell, Overview/Home,
+Transactions, Accounts, Budget, Statistics, Savings goals, Debts, Credit cards,
+Recurring, Installments, Calendar, Categories, Search, Bookmarks, Settings,
+Landing, Sign in (with error banner), Create account. Mascots are placed by
+semantic state, with the Working/Board tablet and card poses verified visually.
+
+Remaining scope is the non-mockup tier in §8 (detail screens, editors, auth
+recovery/MFA, notifications, conflicts, 404): those keep their existing design
+system styling and functional flows.

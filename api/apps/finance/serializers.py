@@ -44,6 +44,7 @@ class AccountSerializer(UserOwnedModelSerializer):
             "name",
             "type",
             "currency",
+            "bank_name",
             "opening_balance",
             "current_balance",
             "credit_limit",

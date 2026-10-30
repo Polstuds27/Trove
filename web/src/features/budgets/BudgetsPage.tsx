@@ -395,7 +395,7 @@ function BudgetBlock({ item, currency }: { item: BudgetProgress; currency: strin
             <Link
               to={editHref}
               aria-label={`Edit ${label} budget`}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-faint opacity-0 transition-all hover:bg-surface-sunken hover:text-ink focus:opacity-100 group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-faint opacity-0 hover:bg-surface-sunken hover:text-ink focus:opacity-100 group-hover:opacity-100"
             >
               <Pencil className="h-3.5 w-3.5" />
             </Link>

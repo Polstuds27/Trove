@@ -46,7 +46,7 @@ FK_FIELDS = {
 
 ALLOWED_FIELDS = {
     "account": {
-        "name", "type", "currency", "opening_balance", "credit_limit",
+        "name", "bank_name", "type", "currency", "opening_balance", "credit_limit",
         "statement_day", "due_day", "archived", "group_id",
     },
     "account_group": {"name"},
@@ -269,6 +269,10 @@ def _apply_inner(user, model, entity, mutation, client_timestamp=None):
 
     for key, value in data.items():
         setattr(obj, key, value)
+    # As on create, clean fields before using them in calculations. JSON
+    # decimal inputs may still be strings here (e.g. "85.3"), while ledger
+    # amounts are Decimal instances. Also validate updates just like creates.
+    obj.full_clean(exclude=["user", "deleted_at"])
     if entity == "account" and "opening_balance" in data:
         recompute_account_balance(obj)
     obj.version += 1

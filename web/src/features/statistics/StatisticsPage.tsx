@@ -218,6 +218,7 @@ export function StatisticsPage() {
       </div>
 
       <div className="grid gap-[17px] lg:grid-cols-2 lg:items-start">
+        <div className="space-y-[17px]">
         {/* Spending by category. */}
         <SurfaceCard className="overflow-hidden">
           <div className="flex items-baseline justify-between gap-3 border-b border-line/70 px-5 py-4 sm:px-6">
@@ -295,6 +296,40 @@ export function StatisticsPage() {
           </div>
         </SurfaceCard>
 
+        {/* Net worth. */}
+        <SurfaceCard className="p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[15px] font-semibold text-ink">Net worth</h2>
+              <p className="mt-0.5 text-[12px] text-muted">Assets minus liabilities</p>
+            </div>
+            <div className="text-right">
+              <p className="tabular text-[20px] font-bold leading-none tracking-[-0.03em] text-primary">
+                {formatMoney(totals.netWorth, currency)}
+              </p>
+              <p className="mt-1 text-[11px] text-muted">
+                {formatMoney(totals.assets, currency, { compact: true })} assets
+              </p>
+            </div>
+          </div>
+          <div className="mt-5">
+            <LineChart
+              data={worthSeries}
+              height={150}
+              ariaLabel="Net worth over the last six months"
+              tone="primary"
+              fill
+              format={(value) => formatMoney(value, currency, { compact: true })}
+            />
+          </div>
+          <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-muted">
+            <Wallet className="h-3.5 w-3.5" /> Transfers between your own accounts are excluded.
+          </p>
+        </SurfaceCard>
+        </div>
+
+        {/* Right column. */}
+        <div className="space-y-[17px]">
         {/* Income vs expenses + mascot. */}
         <div className="space-y-3">
           <SurfaceCard className="overflow-hidden">
@@ -353,38 +388,7 @@ export function StatisticsPage() {
         </div>
       </div>
 
-      {/* Reports kept from the earlier tabbed page. */}
-      <div className="grid gap-[17px] lg:grid-cols-2 lg:items-start">
-        <SurfaceCard className="p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-[15px] font-semibold text-ink">Net worth</h2>
-              <p className="mt-0.5 text-[12px] text-muted">Assets minus liabilities</p>
-            </div>
-            <div className="text-right">
-              <p className="tabular text-[20px] font-bold leading-none tracking-[-0.03em] text-primary">
-                {formatMoney(totals.netWorth, currency)}
-              </p>
-              <p className="mt-1 text-[11px] text-muted">
-                {formatMoney(totals.assets, currency, { compact: true })} assets
-              </p>
-            </div>
-          </div>
-          <div className="mt-5">
-            <LineChart
-              data={worthSeries}
-              height={150}
-              ariaLabel="Net worth over the last six months"
-              tone="primary"
-              fill
-              format={(value) => formatMoney(value, currency, { compact: true })}
-            />
-          </div>
-          <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-muted">
-            <Wallet className="h-3.5 w-3.5" /> Transfers between your own accounts are excluded.
-          </p>
-        </SurfaceCard>
-
+      {/* Income by source. */}
         <SurfaceCard className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -413,8 +417,8 @@ export function StatisticsPage() {
             )}
           </div>
         </SurfaceCard>
+        </div>
       </div>
-    </div>
   );
 }
 
@@ -449,13 +453,13 @@ function TrendBars({
             <div className="flex flex-1 items-end justify-center gap-1">
               <div
                 title={`${point.label} income: ${formatMoney(point.income, currency)}`}
-                className={`w-[42%] rounded-t-[5px] transition-opacity ${current ? INCOME_BAR_CURRENT : INCOME_BAR} opacity-90 group-hover:opacity-100`}
-                style={{ height: `${incomeHeight}px` }}
+                className={`w-[42%] origin-bottom animate-bar-grow rounded-t-[5px] transition-opacity ${current ? INCOME_BAR_CURRENT : INCOME_BAR} opacity-90 group-hover:opacity-100`}
+                style={{ height: `${incomeHeight}px`, animationDelay: `${Math.min(index * 30, 180)}ms` }}
               />
               <div
                 title={`${point.label} expenses: ${formatMoney(point.expense, currency)}`}
-                className={`w-[42%] rounded-t-[5px] transition-opacity ${current ? EXPENSE_BAR_CURRENT : EXPENSE_BAR} opacity-90 group-hover:opacity-100`}
-                style={{ height: `${expenseHeight}px` }}
+                className={`w-[42%] origin-bottom animate-bar-grow rounded-t-[5px] transition-opacity ${current ? EXPENSE_BAR_CURRENT : EXPENSE_BAR} opacity-90 group-hover:opacity-100`}
+                style={{ height: `${expenseHeight}px`, animationDelay: `${Math.min(index * 30, 180)}ms` }}
               />
             </div>
             <span className={`mt-2 truncate text-center text-[10px] ${current ? "font-semibold text-ink" : "text-muted"}`}>

@@ -19,10 +19,10 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  Avatar,
   Badge,
   Button,
   ConfirmOverlay,
+  MascotTipCard,
   Dropdown,
   GlassPanel,
   LinkButton,
@@ -32,9 +32,10 @@ import {
   useToast,
 } from "../../components/ui";
 import { Mascot } from "../../components/ui";
+import { AccountAvatar } from "./AccountAvatar";
 import type { LocalAccount, LocalTransaction } from "../../db/types";
 import { byTxNewest, formatMoney, formatPercent, formatRelativeDay } from "../../design/format";
-import { ACCOUNT_TYPE_LABELS, accountIcon } from "../../design/icons";
+import { ACCOUNT_TYPE_LABELS, accountIcon, categoryIcon } from "../../design/icons";
 import { deleteAccount, updateAccount } from "../../db/repositories";
 import { useLocalData } from "../analytics/useLocalData";
 import {
@@ -56,6 +57,7 @@ export function AccountsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<LocalAccount | null>(null);
   const [busy, setBusy] = useState(false);
+
 
   const period: Period = useMemo(
     () => ({ kind: "month", anchor: new Date(), monthStartDay: preferences.monthStartDay }),
@@ -252,12 +254,25 @@ export function AccountsPage() {
               </div>
             </SurfaceCard>
 
+            <div className="lg:hidden">
+              <MascotTipCard
+                title="Quick tip"
+                lines={[
+                  "Select an account to see its balance and recent activity.",
+                  "Use Transfer to move money between your own accounts. It won't count as spending.",
+                ]}
+                mascotState="accounts"
+                storageKey="trove_accounts_tip_dismissed"
+              />
+            </div>
+
             {/* Desktop selected account. */}
-            <div className="hidden lg:block">
+            <div className="hidden space-y-4 lg:block">
               <SurfaceCard className="overflow-hidden">
                 {selected ? (
                   <>
                     <div className="border-b border-line/70 p-6">
+                      <AccountAvatar account={selected.account} size={44} className="mb-3" />
                       <p className="trove-eyebrow">
                         {ACCOUNT_TYPE_LABELS[selected.account.type] ?? selected.account.type}
                       </p>
@@ -348,9 +363,16 @@ export function AccountsPage() {
                 )}
               </SurfaceCard>
 
-              <div className="flex justify-center pt-2">
-                <Mascot state="accounts" size={168} />
-              </div>
+              <MascotTipCard
+                title="Quick tip"
+                lines={[
+                  "Select an account to see its balance and recent activity.",
+                  "Use Transfer to move money between your own accounts. It won't count as spending.",
+                ]}
+                mascotState="accounts"
+                storageKey="trove_accounts_tip_dismissed"
+                mascotSize={96}
+              />
             </div>
           </div>
         </>
@@ -401,7 +423,7 @@ function AccountRowMain({
 
   const body = (
     <>
-      <Avatar name={account.name} size={40} />
+      <AccountAvatar account={account} size={40} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-[15px] font-semibold leading-5 text-ink">
@@ -507,10 +529,12 @@ function RecentRow({
   lookups: ReturnType<typeof useLocalData>["lookups"];
 }) {
   const title = transactionTitle(transaction, lookups);
+  const categoryObj = transaction.category_id ? lookups.category.get(transaction.category_id) : null;
+  const Icon = categoryIcon(categoryObj?.icon ?? null, categoryObj?.name);
   const incoming = transaction.to_account_id === accountId;
   const sign = transaction.type === "transfer" ? "" : incoming ? "+" : "−";
   const tone =
-    transaction.type === "transfer" ? "text-transfer" : incoming ? "text-income" : "text-ink";
+    transaction.type === "transfer" ? "text-transfer" : incoming ? "text-income" : "text-expense";
 
   return (
     <li>
@@ -518,14 +542,16 @@ function RecentRow({
         to={`/transactions/${transaction.id}`}
         className="flex items-center gap-3 py-3 transition-colors hover:text-primary"
       >
-        <Avatar name={title} size={32} />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-primary">
+          <Icon className="h-4 w-4" />
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13.5px] font-semibold text-ink">{title}</span>
           <span className="mt-0.5 block text-[11.5px] text-muted">
             {formatRelativeDay(transaction.date)}
           </span>
         </span>
-        <span className={`tabular shrink-0 text-[13px] font-semibold ${tone}`}>
+        <span className={`tabular shrink-0 text-[14px] font-semibold ${tone}`}>
           {sign}
           {formatMoney(Math.abs(transaction.amount), transaction.currency)}
         </span>

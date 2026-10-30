@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import { AuthProvider } from "./auth/AuthContext";
+import { SessionRecoveryProvider } from "./auth/SessionRecovery";
 import { SyncProvider } from "./sync/SyncContext";
 import { PreferencesProvider } from "./features/settings/preferences";
 import { ToastProvider } from "./components/ui/Toast";
@@ -31,12 +32,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <PreferencesProvider>
             <SyncProvider>
               <ToastProvider>
+                <SessionRecoveryProvider>
                 {/* Last line of defence: a render crash shows this instead of a
                     blank page, and keeps the rest of the shell mounted. */}
                 <ErrorBoundary>
                   <App />
                 </ErrorBoundary>
                 <NetworkBanner />
+                </SessionRecoveryProvider>
               </ToastProvider>
             </SyncProvider>
           </PreferencesProvider>

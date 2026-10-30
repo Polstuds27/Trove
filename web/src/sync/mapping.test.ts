@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { fromServer, normalizeEntityName, toServerPayload } from "./mapping";
 
 describe("toServerPayload", () => {
+  it("keeps the bank selection through push and pull, including legacy accounts", () => {
+    expect(toServerPayload("accounts", { bank_name: "GoTyme Bank" })).toEqual({ bank_name: "GoTyme Bank" });
+    expect(toServerPayload("accounts", { bank_name: null })).toEqual({ bank_name: null });
+    expect(fromServer("accounts", { id: "a", bank_name: "GoTyme Bank" }, 1, null)).toMatchObject({ bank_name: "GoTyme Bank" });
+    expect(fromServer("accounts", { id: "legacy" }, 1, null)).toMatchObject({ bank_name: null });
+  });
   it("renames the local tag list to the server many-to-many name", () => {
     expect(toServerPayload("transactions", { tag_ids: ["a", "b"] })).toEqual({ tags: ["a", "b"] });
   });

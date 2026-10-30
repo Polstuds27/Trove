@@ -1,34 +1,13 @@
-<div style="display: inline-block; padding: 6px 10px; border-radius: 999px; background-color: #063f3b; color: #5eead4; font-size: 12px; font-weight: 600; margin-bottom: 18px; font-family: Arial, Helvetica, sans-serif;">
-  Sign-In Code
-</div>
-
-<h1 style="margin: 0 0 16px 0; font-size: 28px; line-height: 1.25; font-weight: 700; color: #f8fafc; font-family: Arial, Helvetica, sans-serif;">
-  Your sign-in code
-</h1>
-
-<p style="margin: 0 0 18px 0; font-size: 15px; line-height: 1.7; color: #94a3b8; font-family: Arial, Helvetica, sans-serif;">
-  Someone requested a sign-in code for your
-  <strong style="color: #e2e8f0; font-family: Arial, Helvetica, sans-serif;">FinTrack</strong>
-  account. Enter it in the app to finish signing in.
-</p>
-
-<div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #0b1620; border: 1px solid #1b2b38; border-radius: 10px;">
-  <p style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: 0.3em; color: #f8fafc; font-family: Arial, Helvetica, sans-serif;">
-    {{ code }}
-  </p>
-</div>
-
-<div style="margin: 30px 0; padding: 16px 18px; background-color: #0b1620; border: 1px solid #1b2b38; border-radius: 10px;">
-  <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #94a3b8; font-family: Arial, Helvetica, sans-serif;">
-    <strong style="color: #e2e8f0; font-family: Arial, Helvetica, sans-serif;">This code expires in {{ minutes }} minutes and works once.</strong>
-    <br />
-    After too many wrong guesses it stops working — request a fresh one instead.
-  </p>
-</div>
-
-<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #172633;">
-  <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #64748b; font-family: Arial, Helvetica, sans-serif;">
-    Didn't request this code?
-    <strong style="color: #94a3b8; font-family: Arial, Helvetica, sans-serif;">Someone may have your password — change it after signing in.</strong>
-  </p>
-</div>
+{% extends "emails/base.html" %}
+{% block title %}Your Trove sign-in code{% endblock %}
+{% block preheader %}Your one-time sign-in code is ready. Enter it in Trove to continue.{% endblock %}
+{% block label %}Secure sign-in{% endblock %}
+{% block heading %}Let's get you back in.{% endblock %}
+{% block content %}
+<p style="margin:0 0 24px;font-size:15px;line-height:25px;color:#4A564D;">Enter this code in Trove to finish signing in. Keep it to yourself &mdash; never share your sign-in code with anyone.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:24px 8px;background-color:#EDF0E8;border:1px solid #D9D3C9;border-radius:12px;">
+  <p style="margin:0;font-family:'Courier New',monospace;font-size:30px;line-height:40px;font-weight:700;letter-spacing:4px;color:#294737;">{{ code }}</p>
+</td></tr></table>
+<p style="margin:18px 0 0;font-size:13px;line-height:22px;color:#68736B;">This code expires in {{ minutes }} minutes and works once. If it expires or stops working after too many attempts, request a fresh code in Trove.</p>
+{% endblock %}
+{% block notice %}Didn't request this code? Don't use or share it. Review your account security directly in Trove if you're concerned.{% endblock %}

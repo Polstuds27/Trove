@@ -36,6 +36,21 @@ export function CurrencySection() {
   const [rate, setRate] = useState("1");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [currencyBusy, setCurrencyBusy] = useState(false);
+  const [currencyError, setCurrencyError] = useState<string | null>(null);
+
+  async function changeCurrency(currency: string) {
+    setCurrencyBusy(true);
+    setCurrencyError(null);
+    try {
+      await update({ baseCurrency: currency });
+      toast.push({ tone: "success", title: "Preferred currency updated" });
+    } catch (err) {
+      setCurrencyError(err instanceof Error ? err.message : "Couldn't save currency. Reconnect and try again.");
+    } finally {
+      setCurrencyBusy(false);
+    }
+  }
 
   const rows = useLiveQuery(
     async () =>
@@ -106,8 +121,9 @@ export function CurrencySection() {
         <Select
           label="Report in"
           value={preferences.baseCurrency}
-          onChange={(event) => void update({ baseCurrency: event.target.value })}
-          hint="Amounts in other currencies are converted for display only — the stored value is never rewritten."
+          disabled={currencyBusy}
+          onChange={(event) => void changeCurrency(event.target.value)}
+          hint="Saved to your profile for reports on every device. Reconnect to change it. Stored amounts keep their original currency."
         >
           {CURRENCIES.map((code) => (
             <option key={code} value={code}>
@@ -115,6 +131,7 @@ export function CurrencySection() {
             </option>
           ))}
         </Select>
+        {currencyError && <p role="alert" className="mt-2 text-sm text-expense">{currencyError}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-muted">In use:</span>
           {used.map((code) => (

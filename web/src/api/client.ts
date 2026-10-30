@@ -60,7 +60,7 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_KEY);
 }
 
-/** Trade the refresh token for a new access token. Returns false when expired. */
+/** False means credentials were rejected; temporary failures throw for retry. */
 export function refreshAccessToken(): Promise<boolean> {
   // Single-flight: the server rotates AND blacklists on every refresh, so N
   // concurrent 401s must share one rotation. Without this, a sync cycle plus
@@ -68,7 +68,18 @@ export function refreshAccessToken(): Promise<boolean> {
   // wins, the rest get "blacklisted" rejections, and a perfectly valid session
   // degrades to signed-out with its queue stuck.
   if (!refreshInFlight) {
-    refreshInFlight = doRefresh().finally(() => {
+    const expectedRefresh = getRefreshToken();
+    const rotate = () => {
+      // Another tab may have rotated while we waited for its lock.
+      if (getRefreshToken() !== expectedRefresh) return Promise.resolve(Boolean(getAccessToken()));
+      return doRefresh();
+    };
+    // The in-memory promise only protects this tab. All tabs share storage,
+    // and rotation blacklists the old token, so coordinate across tabs too.
+    const rotation = typeof navigator !== "undefined" && navigator.locks
+      ? navigator.locks.request("trove-token-refresh", rotate)
+      : rotate();
+    refreshInFlight = rotation.finally(() => {
       refreshInFlight = null;
     });
   }
@@ -94,16 +105,22 @@ async function doRefresh(): Promise<boolean> {
       body: JSON.stringify({ refresh }),
       signal: timeout,
     });
-    if (!res.ok) return false;
+    if (res.status === 401 || res.status === 403) {
+      return getRefreshToken() !== refresh && Boolean(getAccessToken());
+    }
+    if (!res.ok) throw new ApiError(res.status, "Session refresh is temporarily unavailable. Sync will retry.");
     const data = (await res.json()) as { access?: string; refresh?: string };
-    if (!data.access) return false;
+    if (!data.access) throw new ApiError(502, "Session refresh returned an invalid response. Sync will retry.");
+    // A logout or another sign-in during this request must win over its reply.
+    if (getRefreshToken() !== refresh) return Boolean(getAccessToken());
     localStorage.setItem(ACCESS_KEY, data.access);
     // Rotation hands back a new refresh token; keep it, or the next cycle
     // replays an already-blacklisted one and signs the user out for real.
     if (data.refresh) localStorage.setItem(REFRESH_KEY, data.refresh);
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(0, "Couldn't refresh the session while the server is unreachable. Sync will retry.");
   }
 }
 
@@ -176,8 +193,13 @@ export async function apiFetch<T>(
     );
   }
 
-  if (res.status === 401 && allowRetry && (await refreshAccessToken())) {
-    return apiFetch<T>(path, init, false);
+  if (res.status === 401 && allowRetry && token) {
+    // A delayed 401 may refer to the token sent before another request rotated
+    // it. Retry the latest access token before attempting another rotation.
+    const currentToken = getAccessToken();
+    if ((currentToken && currentToken !== token) || (await refreshAccessToken())) {
+      return apiFetch<T>(path, init, false);
+    }
   }
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;

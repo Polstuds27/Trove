@@ -15,7 +15,6 @@ import {
   Plus,
 } from "lucide-react";
 import {
-  Avatar,
   Button,
   EmptyState,
   GlassPanel,
@@ -28,6 +27,9 @@ import {
   Skeleton,
   SurfaceCard,
 } from "../../components/ui";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../db";
+import { PROFILE_KEY } from "../../db/profile";
 import { useAuth } from "../../auth/AuthContext";
 import {
   byTxNewest,
@@ -36,6 +38,7 @@ import {
   formatRelativeDay,
   daysBetween,
 } from "../../design/format";
+import { categoryIcon } from "../../design/icons";
 import type { LocalTransaction } from "../../db/types";
 import { useLocalData } from "../analytics/useLocalData";
 import { usePreferences } from "../settings/preferences";
@@ -80,7 +83,8 @@ function OverviewRow({
   currency: string;
 }) {
   const title = transactionTitle(transaction, lookups);
-  const category = transaction.category_id ? lookups.category.get(transaction.category_id)?.name : null;
+  const categoryObj = transaction.category_id ? lookups.category.get(transaction.category_id) : null;
+  const category = categoryObj?.name ?? null;
   const meta = [category ?? (transaction.type === "income" ? "Income" : "Expense"), formatRelativeDay(transaction.date)]
     .filter(Boolean)
     .join(" · ");
@@ -89,16 +93,19 @@ function OverviewRow({
     transaction.type === "income"
       ? "text-income"
       : transaction.type === "expense"
-        ? "text-ink"
+        ? "text-expense"
         : "text-transfer";
   const sign = transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : "";
+  const Icon = categoryIcon(categoryObj?.icon ?? null, categoryObj?.name);
 
   return (
     <Link
       to={`/transactions/${transaction.id}`}
       className="trove-row group"
     >
-      <Avatar name={title} size={38} />
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-semibold leading-5 text-ink group-hover:text-primary">
           {title}
@@ -180,6 +187,7 @@ export function OverviewPage() {
   const { lookups, dataset, ready } = useLocalData();
   const { preferences } = usePreferences();
   const { profile, email } = useAuth();
+  const cached = useLiveQuery(() => db.profile.get(PROFILE_KEY), []);
   const navigate = useNavigate();
   const [anchor] = useState(() => new Date());
   const currency = dataset.baseCurrency;
@@ -224,7 +232,8 @@ export function OverviewPage() {
   const balanceDelta = priorBalance > 0 ? (month.cashFlow / priorBalance) * 100 : null;
   const deltaText = signedPercent(balanceDelta);
 
-  const firstName = profile?.first_name?.trim() || email?.split("@")[0] || "";
+  const firstName =
+    profile?.first_name?.trim() || cached?.first_name?.trim() || email?.split("@")[0] || "";
   const greeting = greetingCopy();
   const today = longDate();
 
@@ -331,8 +340,8 @@ export function OverviewPage() {
               </p>
             )}
           </div>
-          <div className="pointer-events-none absolute bottom-0 right-1 flex h-[132px] w-[132px] items-end justify-center rounded-full bg-[#2c4034]">
-            <Mascot state="greeting" size={138} />
+          <div className="absolute bottom-0 right-3">
+            <Mascot state="greeting" size={120} />
           </div>
         </section>
 
@@ -367,6 +376,35 @@ export function OverviewPage() {
               </div>
             </div>
           ))}
+
+        {/* Compact income / expenses / left over. */}
+        <div className="grid grid-cols-3 gap-3">
+          <MiniStat
+            label="Income"
+            value={formatMoney(month.income, currency, { compact: true })}
+            tone="text-income"
+          />
+          <MiniStat
+            label="Expenses"
+            value={formatMoney(month.expense, currency, { compact: true })}
+            tone="text-expense"
+          />
+          <MiniStat
+            label="Left over"
+            value={formatMoney(month.cashFlow, currency, { compact: true, signed: true })}
+            tone={month.cashFlow >= 0 ? "text-income" : "text-expense"}
+          />
+        </div>
+
+        {/* Recent. */}
+        <section>
+          <SectionHeading
+            title="Recent"
+            className="mb-2 px-1"
+            action={<LinkButton to="/transactions">See all</LinkButton>}
+          />
+          <SurfaceCard className="overflow-hidden">{recentList()}</SurfaceCard>
+        </section>
 
         {/* Budget snapshot. */}
         <section>
@@ -417,35 +455,6 @@ export function OverviewPage() {
             )}
           </SurfaceCard>
         </section>
-
-        {/* Compact income / expenses / left over. */}
-        <div className="grid grid-cols-3 gap-3">
-          <MiniStat
-            label="Income"
-            value={formatMoney(month.income, currency, { compact: true })}
-            tone="text-income"
-          />
-          <MiniStat
-            label="Expenses"
-            value={formatMoney(month.expense, currency, { compact: true })}
-            tone="text-expense"
-          />
-          <MiniStat
-            label="Left over"
-            value={formatMoney(month.cashFlow, currency, { compact: true, signed: true })}
-            tone={month.cashFlow >= 0 ? "text-income" : "text-expense"}
-          />
-        </div>
-
-        {/* Recent. */}
-        <section>
-          <SectionHeading
-            title="Recent"
-            className="mb-2 px-1"
-            action={<LinkButton to="/transactions">See all</LinkButton>}
-          />
-          <SurfaceCard className="overflow-hidden">{recentList()}</SurfaceCard>
-        </section>
       </div>
 
       {/* ------------------------------------------------------------ desktop */}
@@ -466,7 +475,7 @@ export function OverviewPage() {
               </p>
             )}
           </div>
-          <div className="pointer-events-none absolute bottom-0 right-7 hidden h-[184px] w-[184px] items-end justify-center rounded-full bg-[#2c4034] dark:flex">
+          <div className="pointer-events-none absolute bottom-0 right-7 hidden h-[184px] w-[184px] items-end justify-center dark:flex">
             <Mascot state="greeting" size={196} />
           </div>
           <div className="pointer-events-none absolute bottom-0 right-10 dark:hidden">

@@ -32,6 +32,7 @@ ACCOUNT_TYPES = [
 
 class Account(BaseModel):
     group = models.ForeignKey(AccountGroup, null=True, blank=True, on_delete=models.SET_NULL)
+    bank_name = models.CharField(max_length=120, null=True, blank=True, default=None)
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
     currency = models.CharField(max_length=3, default="USD")

@@ -41,6 +41,7 @@ export {
   type ErrorKind,
 } from "./Feedback";
 export { Mascot, type MascotPose } from "./Mascot";
+export { MascotTipCard } from "./MascotTipCard";
 export {
   GlassPanel,
   SurfaceCard,

@@ -1,4 +1,5 @@
 import { apiFetch, ApiError, getAccessToken, isOfflineError } from "../api/client";
+import type { Table } from "dexie";
 import { recalcBalances } from "../db/balances";
 import { db, tableFor } from "../db";
 import type { EntityName, LocalTransaction, OutboxEntry, PushResult, SyncChange } from "../db/types";
@@ -8,6 +9,7 @@ import {
   getCheckpoint,
   getClientId,
   pendingMutations,
+  retryMutation,
   setCheckpoint,
 } from "./outbox";
 
@@ -91,12 +93,25 @@ async function pushRound(clientId: string): Promise<boolean> {
         client_timestamp: entry.created_at,
         server_version: version,
       });
-      await patchRow(entry.entity, entry.entity_id, { version, sync_status: "synced" });
-      await db.outbox.delete(entry.id);
+      await db.transaction("rw", db.outbox, tableFor(entry.entity), async () => {
+        // The user may have edited this account while its older payload was
+        // uploading. Acknowledge only that upload, then send the newer edit
+        // against the accepted version instead of discarding it.
+        const newer = await db.outbox.where("entity_id").equals(entry.entity_id)
+          .filter((queued) => queued.id !== entry.id && queued.owner === entry.owner && queued.status === "pending")
+          .toArray();
+        for (const queued of newer) {
+          await db.outbox.update(queued.id, { base_version: version, op: queued.op === "delete" ? "delete" : "update" });
+        }
+        await patchRow(entry.entity, entry.entity_id, { version, sync_status: newer.length ? "pending" : "synced" });
+        await db.outbox.delete(entry.id);
+      });
       if (entry.entity === "transactions") await recalcBalances();
       continue;
     }
 
+    // An obsolete response must not reject a newer, corrected payload.
+    if (!(await db.outbox.get(entry.id))) continue;
     if (result.status === "conflict") {
       await db.outbox.update(entry.id, {
         status: "conflict",
@@ -159,6 +174,14 @@ async function recordConflict(
 async function applyChange(change: SyncChange): Promise<void> {
   const entity = normalizeEntityName(change.entity);
   if (!entity) return;
+  const tables: Table[] = [tableFor(entity), db.outbox, db.conflicts];
+  if (entity === "transactions") tables.push(db.accounts, db.transactions);
+  // Queue inspection and row replacement must be one operation. Otherwise
+  // a form save could land between the inspection and an older server write.
+  await db.transaction("rw", tables, () => applyChangeLocked(change, entity));
+}
+
+async function applyChangeLocked(change: SyncChange, entity: EntityName): Promise<void> {
   const existing = (await tableFor(entity).get(change.entity_id)) as LocalTransaction | undefined;
 
   if (change.op === "delete") {
@@ -189,7 +212,7 @@ async function applyChange(change: SyncChange): Promise<void> {
   const queued = await db.outbox
     .where("entity_id")
     .equals(change.entity_id)
-    .filter((entry) => entry.status === "pending" || entry.status === "failed")
+    .filter((entry) => entry.status === "pending" || entry.status === "failed" || entry.status === "conflict")
     .count();
 
   if (queued > 0 && existing && change.version > existing.version) {
@@ -212,6 +235,10 @@ async function applyChange(change: SyncChange): Promise<void> {
     return;
   }
 
+  // Old history is not an acknowledgement of a queued edit. In particular,
+  // a legacy bank_name=null must not replace the user's selected bank.
+  if (queued > 0) return;
+  if (existing && change.version < existing.version) return;
   const row = fromServer(entity, change.payload, change.version, null);
   const merged = { ...(existing ?? {}), ...row } as LocalTransaction;
   syncDebug("pull mapped", {
@@ -261,6 +288,7 @@ async function runSyncInternal(accountKey: string): Promise<SyncState> {
     // API is unreachable (`navigator.onLine` can't tell these apart, request
     // outcomes can). Anything else is a genuine rejection or bug.
     if (error instanceof ApiError && error.status === 401) return "signed-out";
+    if (error instanceof ApiError && (error.status >= 500 || error.status === 429)) return "api-unavailable";
     if (typeof navigator !== "undefined" && !navigator.onLine) return "offline";
     if (isOfflineError(error)) return "api-unavailable";
     return "error";
@@ -306,6 +334,7 @@ export async function resolveWithLocal(conflictId: string): Promise<void> {
       status: "pending",
       last_error: null,
     });
+    await retryMutation(entry.id);
   }
   await patchRow(conflict.entity, conflict.entity_id, { sync_status: "pending" });
   await db.conflicts.delete(conflictId);

@@ -12,7 +12,7 @@ EMAILJS = {
     "EMAILJS_TEMPLATE_ID": "tpl",
     "EMAILJS_PUBLIC_KEY": "pub",
     "EMAILJS_PRIVATE_KEY": "priv",
-    "EMAILJS_FROM_NAME": "FinTrack",
+    "EMAILJS_FROM_NAME": "Trove",
 }
 
 
@@ -27,6 +27,13 @@ def test_register_falls_back_to_django_backend():
     mail.outbox.clear()
     assert register(Client()).status_code == 201
     assert len(mail.outbox) == 1
+    message = mail.outbox[0]
+    assert message.subject == "Verify your Trove account"
+    assert message.from_email.startswith("Trove <")
+    assert "<html" not in message.body
+    assert "&amp;" not in message.body
+    assert message.alternatives[0][1] == "text/html"
+    assert "Trove" in message.alternatives[0][0]
 
 
 def test_register_sends_through_emailjs_when_configured():
@@ -44,7 +51,9 @@ def test_register_sends_through_emailjs_when_configured():
     assert payload["accessToken"] == "priv"  # private key preferred over public
     params = payload["template_params"]
     assert params["email"] == "a@b.com"
-    assert params["subject"] == "Verify your FinTrack account"
+    assert params["subject"] == "Verify your Trove account"
+    assert params["from_name"] == "Trove"
+    assert "FinTrack" not in params["html_body"]
     assert "verify-email" in params["html_body"]
     assert not mail.outbox  # Django backend not used when EmailJS is on
 
@@ -60,7 +69,7 @@ def test_password_reset_uses_the_same_generic_template():
 
     payload = json.loads(urlopen.call_args.args[0].data)
     assert payload["template_id"] == "tpl"
-    assert payload["template_params"]["subject"] == "Reset your FinTrack password"
+    assert payload["template_params"]["subject"] == "Reset your Trove password"
     assert "https://app/reset/abc" in payload["template_params"]["html_body"]
 
 
@@ -75,7 +84,7 @@ def test_mfa_code_sender_renders_code_and_expiry():
 
     payload = json.loads(urlopen.call_args.args[0].data)
     assert payload["template_id"] == "tpl"
-    assert payload["template_params"]["subject"] == "Your FinTrack sign-in code"
+    assert payload["template_params"]["subject"] == "Your Trove sign-in code"
     assert "12345678" in payload["template_params"]["html_body"]
     assert "15 minutes" in payload["template_params"]["html_body"]
 

@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { useAuth } from "../../auth/AuthContext";
+import { db } from "../../db";
+import { PROFILE_KEY } from "../../db/profile";
 import { Avatar } from "./Primitives";
 import { IconButton } from "./Button";
 
@@ -20,7 +23,7 @@ export function PageHeader({
   leading,
   tabs,
   showActionsOnMobile = false,
-  hideMobileAvatar = false,
+  hideMobileAvatar = true,
   className = "",
 }: {
   title: ReactNode;
@@ -36,12 +39,14 @@ export function PageHeader({
   className?: string;
 }) {
   const { email } = useAuth();
-  const name = email ?? "You";
+  const cached = useLiveQuery(() => db.profile.get(PROFILE_KEY), []);
+  const cachedName = cached ? `${cached.first_name} ${cached.last_name}`.trim() : "";
+  const name = cachedName || cached?.email || email || "You";
 
   return (
     <header className={`flex flex-col gap-5 ${className}`}>
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 items-start gap-2.5">
+      <div className="flex flex-nowrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5">
           {leading}
           <div className="min-w-0">
             <div className="lg:hidden">
@@ -75,7 +80,7 @@ export function PageHeader({
               aria-label="Open settings"
               className="lg:hidden"
             >
-              <Avatar name={name} size={42} className="bg-sage text-white shadow-card dark:bg-cream dark:text-ink" />
+              <Avatar name={name} size={42} className="bg-sage text-primary shadow-card dark:bg-cream dark:text-primary-contrast" />
             </Link>
           )}
         </div>

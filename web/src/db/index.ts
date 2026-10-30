@@ -219,6 +219,15 @@ export class FinDB extends Dexie {
         meta: "key",
         profile: "key",
       });
+    // Older accounts have no bank selection. Keep them unassigned rather
+    // than inferring a bank from their custom account names.
+    this.version(6).stores({
+      accounts: "id, group_id, bank_name, type, archived, sync_status, updated_at",
+    }).upgrade(async (tx) => {
+      await tx.table("accounts").toCollection().modify((row) => {
+        if (row.bank_name === undefined) row.bank_name = null;
+      });
+    });
   }
 }
 

@@ -44,6 +44,48 @@ def test_login_returns_tokens():
     assert "access" in res.json() and "refresh" in res.json()
 
 
+def test_sessions_show_active_devices_and_keep_label_after_refresh():
+    from django.contrib.auth import get_user_model
+    from django.utils import timezone
+    from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+
+    get_user_model().objects.create_user(email="devices@example.com", password="Str0ng!Pass")
+    client = Client()
+    tokens = client.post(
+        "/api/v1/auth/login/", {"email": "devices@example.com", "password": "Str0ng!Pass"},
+        HTTP_USER_AGENT="Mozilla/5.0 (Windows NT 10.0) Chrome/130.0",
+    ).json()
+    rotated = client.post("/api/v1/auth/refresh/", {"refresh": tokens["refresh"]}).json()
+    headers = {"HTTP_AUTHORIZATION": f"Bearer {rotated['access']}"}
+    rows = client.get("/api/v1/auth/sessions/", **headers).json()
+    assert len(rows) == 1  # The rotated/blacklisted predecessor is hidden.
+    assert rows[0]["device_name"] == "Chrome on Windows"
+    assert rows[0]["jti"]
+    OutstandingToken.objects.filter(id=rows[0]["id"]).update(expires_at=timezone.now())
+    assert client.get("/api/v1/auth/sessions/", **headers).json() == []
+
+
+def test_sessions_revocation_keeps_blacklist_and_blocks_refresh():
+    from django.contrib.auth import get_user_model
+    from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+
+    get_user_model().objects.create_user(email="revoke@example.com", password="Str0ng!Pass")
+    client = Client()
+    tokens = client.post(
+        "/api/v1/auth/login/", {"email": "revoke@example.com", "password": "Str0ng!Pass"},
+    ).json()
+    headers = {"HTTP_AUTHORIZATION": f"Bearer {tokens['access']}"}
+    session = client.get("/api/v1/auth/sessions/", **headers).json()[0]
+    response = client.delete(
+        "/api/v1/auth/sessions/", data={"id": session["id"]}, content_type="application/json",
+        **headers,
+    )
+    assert response.status_code == 204
+    assert BlacklistedToken.objects.filter(token_id=session["id"]).exists()
+    assert client.get("/api/v1/auth/sessions/", **headers).json() == []
+    assert client.post("/api/v1/auth/refresh/", {"refresh": tokens["refresh"]}).status_code == 401
+
+
 def test_refresh_rotates_and_old_is_blacklisted():
     client = Client()
     register(client)

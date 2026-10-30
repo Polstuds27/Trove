@@ -74,6 +74,19 @@
     --shadow-soft: 0 18px 44px rgb(41 71 55 / 0.11);
     --ring-focus: 89 105 79;
 
+    /* Motion ------------------------------------------------------------ *
+     * One motion scale for the whole app. Components use the Tailwind
+     * `duration-fast|base|slow` + `ease-out-soft` utilities, or these vars
+     * directly in CSS. Keep interaction motion short: finance data should
+     * never feel like it is catching up with the UI. */
+    --motion-fast: 140ms;
+    --motion-base: 200ms;
+    --motion-slow: 280ms;
+    --motion-reveal: 420ms;
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-soft: cubic-bezier(0.4, 0, 1, 1);
+    --ease-in-out-soft: cubic-bezier(0.42, 0, 0.58, 1);
+
     /* Glass and heroes -------------------------------------------------- */
     --glass-bg: 255 253 250 / 0.72;
     --glass-border: 255 255 255 / 0.72;
@@ -212,13 +225,35 @@
     border-radius: 6px;
   }
 
+  /* Interactive elements share one short, eased feedback transition. Only
+     colour-ish properties and transform are listed: never `all`, so layout
+     and data-driven dimensions stay instant. */
+  a,
+  button,
+  [role="button"],
+  summary {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-out-soft);
+  }
+
+  input,
+  select,
+  textarea {
+    transition-property: border-color, background-color, box-shadow, color;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-out-soft);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      transition-delay: 0ms !important;
       scroll-behavior: auto !important;
     }
   }
@@ -369,7 +404,7 @@
   /* ------------------------------------------------------------------ inputs */
   .input,
   .trove-input {
-    @apply w-full rounded-[16px] border px-3.5 py-2.5 text-sm transition-colors;
+    @apply w-full rounded-[16px] border px-3.5 py-2.5 text-sm;
     height: 46px;
     background-color: rgb(var(--color-surface-raised));
     color: rgb(var(--color-ink));
@@ -431,6 +466,7 @@
   .field-error {
     @apply text-xs;
     color: rgb(var(--color-expense));
+    animation: rise var(--motion-fast) var(--ease-out-soft) backwards;
   }
 
   select.input {
@@ -443,10 +479,16 @@
   /* ----------------------------------------------------------------- buttons */
   .btn,
   .trove-btn {
-    @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap text-[13px] font-semibold transition-all;
+    @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap text-[13px] font-semibold;
     min-height: 39px;
     border-radius: 14px;
     padding: 0.55rem 1rem;
+  }
+
+  /* Gentle press feedback — transform only, and skipped while busy/disabled. */
+  .btn:active:not(:disabled),
+  .trove-btn:active:not(:disabled) {
+    transform: scale(0.985);
   }
 
   .btn:disabled,
@@ -521,9 +563,13 @@
   }
 
   .icon-btn {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-[12px] transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center rounded-[12px] disabled:cursor-not-allowed disabled:opacity-50;
     @apply h-9 w-9 shrink-0;
     color: rgb(var(--color-muted));
+  }
+
+  .icon-btn:active:not(:disabled) {
+    transform: scale(0.94);
   }
 
   .icon-btn:hover:not(:disabled) {
@@ -583,10 +629,14 @@
 
   /* ------------------------------------------------------------------- pills */
   .trove-pill {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium;
     min-height: 34px;
     background-color: rgb(var(--color-surface-sunken));
     color: rgb(var(--color-ink));
+  }
+
+  .trove-pill:active {
+    transform: scale(0.97);
   }
 
   .trove-pill:hover {
@@ -605,7 +655,7 @@
 
   /* --------------------------------------------------------------- navigation */
   .trove-nav-item {
-    @apply flex items-center gap-3 rounded-[16px] text-[14px] font-medium transition-colors;
+    @apply flex items-center gap-3 rounded-[16px] text-[14px] font-medium;
     min-height: 32px;
     padding: 0.22rem 0.7rem;
     color: rgb(var(--color-ink-soft));
@@ -633,7 +683,7 @@
 
   /* ------------------------------------------------------------------ rows */
   .trove-row {
-    @apply flex items-center gap-3.5 px-5 py-3.5 transition-colors;
+    @apply flex items-center gap-3.5 px-5 py-3.5 transition-colors duration-fast;
     min-height: 64px;
   }
 
@@ -698,7 +748,10 @@
   }
 
   .trove-progress > span {
-    @apply block h-full rounded-full transition-[width] duration-500;
+    @apply block h-full rounded-full;
+    transform-origin: left center;
+    transition: width var(--motion-reveal) var(--ease-out-soft);
+    animation: progress-in var(--motion-reveal) var(--ease-out-soft) backwards;
   }
 
   .trove-safe-bottom {

@@ -65,12 +65,12 @@ export function ToggleRow({
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-          checked ? "bg-primary" : "bg-line-strong"
+          checked ? "bg-primary dark:bg-sage" : "bg-line-strong"
         }`}
       >
         <span
           aria-hidden="true"
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${
+          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform duration-base ease-smooth dark:bg-cream ${
             checked ? "translate-x-5" : ""
           }`}
         />

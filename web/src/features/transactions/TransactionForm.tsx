@@ -7,15 +7,17 @@
  * Saving always goes through the repositories, so the change is written to
  * IndexedDB and queued for sync even with no connection.
  */
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   ArrowLeftRight,
   Bookmark,
+  Calculator,
   Paperclip,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import type { LocalTransaction } from "../../db/types";
+import { AmountCalculator } from "./AmountCalculator";
 import { CURRENCIES, fromDateTimeInput, toDateTimeInput } from "../../design/format";
 import {
   AmountInput,
@@ -97,6 +99,13 @@ export function TransactionForm({
   const [bookmarked, setBookmarked] = useState(transaction?.is_bookmarked ?? false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const calculatorId = useId();
+  const calculatorButton = useRef<HTMLButtonElement>(null);
+  function closeCalculator() {
+    setCalculatorOpen(false);
+    calculatorButton.current?.focus({ preventScroll: true });
+  }
 
   const categories = useMemo(
     () =>
@@ -256,7 +265,13 @@ export function TransactionForm({
         ariaLabel="Transaction type"
       />
 
-      <Field label="Amount" htmlFor="tx-amount">
+      <Field label="Amount" htmlFor="tx-amount" addon={
+        <button ref={calculatorButton} type="button" aria-expanded={calculatorOpen} aria-controls={calculatorId}
+          onClick={() => setCalculatorOpen((open) => !open)}
+          className="inline-flex min-h-11 items-center gap-1.5 px-2 text-xs font-semibold text-primary">
+          <Calculator aria-hidden="true" className="h-4 w-4" /> Calculator
+        </button>
+      }>
         <AmountInput
           id="tx-amount"
           value={amount}
@@ -266,6 +281,8 @@ export function TransactionForm({
           autoFocus={!transaction}
         />
       </Field>
+      {calculatorOpen && <AmountCalculator id={calculatorId} amount={amount} currency={currency}
+        onClose={closeCalculator} onUse={(value) => { setAmount(value); closeCalculator(); }} />}
 
       {type === "transfer" ? (
         <div className="grid grid-cols-2 gap-3">

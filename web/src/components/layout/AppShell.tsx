@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
@@ -8,7 +8,7 @@ import {
   CircleAlert,
   CreditCard,
   Ellipsis,
-  House,
+  LayoutDashboard,
   Landmark,
   LayoutGrid,
   LogOut,
@@ -19,10 +19,15 @@ import {
   Sprout,
   Target,
   Wallet,
-  X,
   type LucideIcon,
+  BarChart3,
+  CalendarDays,
+  Tags,
+  Search,
+  Bookmark,
 } from "lucide-react";
 import { isActive, ORGANISE_NAV, PLANNING_NAV, SETTINGS_ITEM, type NavItem } from "../../app/navigation";
+import { editorBackgroundPath } from "../../app/modalRoutes";
 import { useAuth } from "../../auth/AuthContext";
 import { useLocalData } from "../../features/analytics/useLocalData";
 import { portfolio } from "../../features/analytics/engine";
@@ -33,7 +38,7 @@ import { PROFILE_KEY } from "../../db/profile";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Avatar } from "../ui/Primitives";
 import { Dropdown } from "../ui/Controls";
-import { IconButton } from "../ui/Button";
+import { Overlay } from "../ui/Overlay";
 import { SyncIndicator } from "./SyncIndicator";
 
 /* ------------------------------------------------------------------ sidebar */
@@ -74,21 +79,16 @@ function SidebarLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => v
   const active = isActive(item, pathname);
   return (
     <li>
-      <NavLink
-        to={item.to}
-        end={!item.matchNested}
-        onClick={onNavigate}
-        aria-current={active ? "page" : undefined}
-        className={`trove-nav-item ${active ? "trove-nav-active" : ""}`}
-      >
-        <span
-          aria-hidden="true"
-          className={`h-2 w-2 shrink-0 rounded-full ${
-            active ? "bg-white dark:bg-ink" : "bg-sage"
-          }`}
-        />
-        <span className="truncate">{item.label}</span>
-      </NavLink>
+       <NavLink
+         to={item.to}
+         end={!item.matchNested}
+         onClick={onNavigate}
+         aria-current={active ? "page" : undefined}
+         className={`trove-nav-item ${active ? "trove-nav-active" : ""}`}
+       >
+         <item.icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+         <span className="truncate">{item.label}</span>
+       </NavLink>
     </li>
   );
 }
@@ -128,7 +128,7 @@ function SidebarFooter() {
         <div className="ml-auto">
           <Dropdown
             label="Account menu"
-            trigger={<Avatar name={name} size={34} />}
+            trigger={<Avatar name={name} size={34} className="bg-sage text-primary shadow-card dark:bg-cream dark:text-primary-contrast"/>}
             items={[
               {
                 id: "settings",
@@ -200,13 +200,13 @@ const PRIMARY_SIDEBAR: NavItem[] = [
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight, matchNested: true },
   { to: "/accounts", label: "Accounts", icon: Wallet, matchNested: true },
   { to: "/budgets", label: "Budget", icon: PiggyBank, matchNested: true },
-  { to: "/statistics", label: "Statistics", icon: LayoutGrid },
+  { to: "/statistics", label: "Statistics", icon: BarChart3 },
 ];
 
 /* --------------------------------------------------------------- mobile nav */
 
 const MOBILE_ITEMS: { key: string; label: string; icon: LucideIcon; to?: string }[] = [
-  { key: "home", label: "Home", icon: House, to: "/overview" },
+  { key: "home", label: "Home", icon: LayoutDashboard, to: "/overview" },
   { key: "activity", label: "Activity", icon: ArrowLeftRight, to: "/transactions" },
   { key: "budget", label: "Budget", icon: PiggyBank, to: "/budgets" },
   { key: "goals", label: "Goals", icon: Target, to: "/goals" },
@@ -246,7 +246,7 @@ function MobileBottomNav({
               <span className="text-[11px] font-semibold leading-none">{item.label}</span>
             </>
           );
-          const className = `flex h-[54px] flex-col items-center justify-center gap-1.5 rounded-full transition-colors ${
+          const className = `flex h-[54px] flex-col items-center justify-center gap-1.5 rounded-full transition-[background-color,color,box-shadow,transform] duration-base ease-smooth active:scale-[0.96] ${
             active
               ? "bg-primary text-primary-contrast shadow-pill"
               : "text-muted hover:text-ink"
@@ -296,15 +296,15 @@ const MORE_GROUPS: { title: string; items: NavItem[] }[] = [
       { to: "/credit-cards", label: "Credit cards", icon: CreditCard, matchNested: true },
       { to: "/recurring", label: "Recurring", icon: Repeat, matchNested: true },
       { to: "/installments", label: "Installments", icon: CalendarClock, matchNested: true },
-      { to: "/calendar", label: "Calendar", icon: CalendarClock },
+      { to: "/calendar", label: "Calendar", icon: CalendarDays },
     ],
   },
   {
     title: "Organise",
     items: [
-      { to: "/categories", label: "Categories", icon: LayoutGrid, matchNested: true },
-      { to: "/search", label: "Search", icon: LayoutGrid },
-      { to: "/bookmarks", label: "Bookmarks", icon: LayoutGrid },
+      { to: "/categories", label: "Categories", icon: Tags, matchNested: true },
+      { to: "/search", label: "Search", icon: Search },
+      { to: "/bookmarks", label: "Bookmarks", icon: Bookmark },
       { to: "/notifications", label: "Notifications", icon: Bell },
       { to: "/sync/conflicts", label: "Sync conflicts", icon: CircleAlert },
       SETTINGS_ITEM,
@@ -315,38 +315,15 @@ const MORE_GROUPS: { title: string; items: NavItem[] }[] = [
 function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   useEffect(() => {
     if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => { if (desktop.matches) onClose(); };
+    closeOnDesktop();
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
   }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More destinations">
-      <button
-        type="button"
-        aria-label="Close more sheet"
-        className="absolute inset-0 animate-fade-in bg-black/35 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-      <div
-        id="more-sheet"
-        className="absolute inset-x-0 bottom-0 max-h-[82dvh] animate-slide-up overflow-y-auto rounded-t-[30px] border-t border-white/70 bg-surface px-5 pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-3 shadow-overlay dark:border-line"
-      >
-        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-line-strong" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-primary">More</h2>
-          <IconButton label="Close" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </IconButton>
-        </div>
+    <Overlay open={open} onClose={onClose} title="More" variant="sheet" size="sm">
+      <div id="more-sheet">
         {MORE_GROUPS.map((group) => (
           <div key={group.title} className="mb-4 last:mb-0">
             <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
@@ -375,19 +352,70 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           </div>
         ))}
       </div>
-    </div>
+    </Overlay>
   );
 }
 
 /* -------------------------------------------------------------------- shell */
+
+/**
+ * Replays a short fade/rise when the route changes without remounting the
+ * route tree. Keying by pathname would remount Settings' shared layout and
+ * reset its state, so this only toggles the animation class.
+ */
+export function RouteTransition({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editorBackgroundPath(pathname)) return;
+    const element = ref.current;
+    if (!element) return;
+    element.classList.remove("animate-page-in");
+    // Force a style flush so re-adding the class restarts the keyframes.
+    element.getBoundingClientRect();
+    element.classList.add("animate-page-in");
+  }, [pathname]);
+
+  return (
+    <div ref={ref} className="animate-page-in">
+      {children}
+    </div>
+  );
+}
 
 export interface AppShellProps {
   children: ReactNode;
   onQuickAdd: () => void;
 }
 
+function mobileTitle(pathname: string): string {
+  const map: Record<string, string> = {
+    "/overview": "Overview",
+    "/transactions": "Transactions",
+    "/accounts": "Accounts",
+    "/budgets": "Budget",
+    "/statistics": "Statistics",
+    "/goals": "Savings goals",
+    "/debts": "Debts",
+    "/credit-cards": "Credit cards",
+    "/recurring": "Recurring",
+    "/installments": "Installments",
+    "/calendar": "Calendar",
+    "/categories": "Categories",
+    "/search": "Search",
+    "/bookmarks": "Bookmarks",
+    "/settings": "Settings",
+    "/notifications": "Notifications",
+  };
+  const key = Object.keys(map).find((k) => pathname === k || pathname.startsWith(`${k}/`));
+  return key ? map[key] : "Trove";
+}
+
 export function AppShell({ children, onQuickAdd }: AppShellProps) {
   const { pathname } = useLocation();
+  const { email } = useAuth();
+  const name = email || "You";
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
@@ -406,11 +434,27 @@ export function AppShell({ children, onQuickAdd }: AppShellProps) {
       <Sidebar />
 
       <div className="flex min-h-dvh min-w-0 flex-col lg:ml-[264px] xl:ml-[294px]">
+        <header className="flex items-center justify-between gap-3 px-[18px] pt-4 sm:px-6 lg:hidden">
+          <h1 className="truncate text-[18px] font-semibold text-primary">
+            {mobileTitle(pathname)}
+          </h1>
+          <div className="flex items-center gap-2">
+            <SyncIndicator compact />
+            <NavLink to="/notifications" aria-label="Notifications" className="icon-btn">
+              <Bell className="h-[18px] w-[18px]" />
+            </NavLink>
+            <NavLink to="/settings" aria-label="Profile">
+              <Avatar name={name} size={32} className="bg-sage text-primary shadow-card dark:bg-cream dark:text-primary-contrast"/>
+            </NavLink>
+          </div>
+        </header>
         <main
           id="main"
           className="trove-safe-bottom min-w-0 flex-1 px-[18px] pt-5 sm:px-6 lg:px-0 lg:pb-12 lg:pr-10 lg:pt-10"
         >
-          <div className="mx-auto w-full max-w-[640px] lg:max-w-[1240px]">{children}</div>
+          <div className="mx-auto w-full max-w-[640px] lg:max-w-[1240px]">
+            <RouteTransition>{children}</RouteTransition>
+          </div>
         </main>
       </div>
 
@@ -418,7 +462,7 @@ export function AppShell({ children, onQuickAdd }: AppShellProps) {
         type="button"
         onClick={onQuickAdd}
         aria-label="Add transaction"
-        className="fixed right-4 z-40 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-primary text-primary-contrast shadow-[0_10px_26px_rgba(41,71,55,0.32)] transition-transform active:scale-95 lg:hidden"
+        className="fixed right-4 z-40 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-primary text-primary-contrast shadow-[0_10px_26px_rgba(41,71,55,0.32)] transition-[transform,background-color,box-shadow] duration-base ease-smooth hover:bg-primary-hover active:scale-95 lg:hidden"
         style={{ bottom: "calc(106px + env(safe-area-inset-bottom, 0px))" }}
       >
         <Plus aria-hidden="true" className="h-6 w-6" strokeWidth={2.4} />

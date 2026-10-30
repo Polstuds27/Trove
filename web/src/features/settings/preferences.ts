@@ -1,13 +1,17 @@
 /**
  * Local preferences.
  *
- * These are device-level UI choices, not ledger data, so they live in
- * IndexedDB rather than on the server profile. `preferences` in `meta` is one
+ * UI choices live in IndexedDB. Currency is an account setting resolved from
+ * the live/cached profile; changes are saved to the server. `preferences` in `meta` is one
  * JSON blob, written through a single setter so every screen reads a consistent
  * snapshot.
  */
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { getMeta, setMeta } from "../../sync/outbox";
+import { useAuth } from "../../auth/AuthContext";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../db";
+import { PROFILE_KEY } from "../../db/profile";
 
 export type ThemeMode = "light" | "dark" | "system";
 
@@ -17,6 +21,8 @@ export interface Preferences {
   baseCurrency: string;
   /** Day of month the financial month starts on (1-28). */
   monthStartDay: number;
+  /** First weekday in the calendar grid: 0 = Sunday, 1 = Monday. */
+  weekStartsOn: 0 | 1;
   /** Show amounts with a leading sign, useful on the overview. */
   showCents: boolean;
   /** Rows per page in the transaction list. */
@@ -28,6 +34,10 @@ export interface Preferences {
   showArchived: boolean;
   /** Prompt before destructive actions. */
   confirmDestructive: boolean;
+  /** Ask for the device PIN when Trove is opened. */
+  appLock: boolean;
+  /** SHA-256 of the locally chosen app-lock PIN, never the PIN itself. */
+  appLockPinHash: string | null;
   /**
    * Which notification kinds are shown in the notification centre on this
    * device. Server-side alerting is unaffected — this only filters the list.
@@ -42,12 +52,15 @@ export const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
   baseCurrency: "USD",
   monthStartDay: 1,
+  weekStartsOn: 1,
   showCents: true,
   pageSize: 25,
   lastAccountId: null,
   lastCategoryId: null,
   showArchived: false,
   confirmDestructive: true,
+  appLock: false,
+  appLockPinHash: null,
   notifyBudgets: true,
   notifyDebts: true,
   notifyGoals: true,
@@ -84,6 +97,8 @@ function applyTheme(theme: ThemeMode): void {
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
+  const { profile, email, updateProfile } = useAuth();
+  const cachedProfile = useLiveQuery(async () => (await db.profile.get(PROFILE_KEY)) ?? null, []);
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [ready, setReady] = useState(false);
 
@@ -152,6 +167,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const update = useCallback(
     async (patch: Partial<Preferences>) => {
+      // Currency belongs to the account. Never create a device-only override
+      // that the next profile refresh would silently undo.
+      if (patch.baseCurrency !== undefined) {
+        await updateProfile({ preferred_currency: patch.baseCurrency });
+      }
       // Never overwrite the blob with defaults: a write that lands before the
       // stored preferences are read would silently reset everything.
       try {
@@ -165,10 +185,19 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setPreferences(next);
       await setMeta(KEY, JSON.stringify(next));
     },
-    [hydrate, applyLoaded],
+    [hydrate, applyLoaded, updateProfile],
   );
 
-  const value = useMemo(() => ({ preferences, update, ready }), [preferences, update, ready]);
+  // Profile is authoritative everywhere, including before Settings is opened.
+  // Its offline cache also repairs legacy preference blobs containing USD.
+  const accountCurrency = profile?.preferred_currency ||
+    (email && cachedProfile?.email.toLowerCase() === email.toLowerCase()
+      ? cachedProfile.preferred_currency : null);
+  const effectivePreferences = useMemo(() => ({
+    ...preferences,
+    baseCurrency: accountCurrency || preferences.baseCurrency,
+  }), [preferences, accountCurrency]);
+  const value = useMemo(() => ({ preferences: effectivePreferences, update, ready }), [effectivePreferences, update, ready]);
   return createElement(PreferencesContext.Provider, { value }, children);
 }
 

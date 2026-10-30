@@ -174,7 +174,7 @@ export function ProgressBar({
       className={`w-full overflow-hidden rounded-full bg-surface-sunken ${height} ${className}`}
     >
       <div
-        className={`h-full rounded-full transition-[width] duration-500 ease-smooth ${fill}`}
+        className={`h-full origin-left rounded-full transition-[width] duration-reveal ease-smooth animate-progress-in ${fill}`}
         style={{ width: `${clamped}%` }}
       />
     </div>

@@ -110,23 +110,24 @@ export function BarChart({
     <figure className="w-full">
       <figcaption className="sr-only">{ariaLabel}</figcaption>
       <div className="flex items-end gap-1.5" style={{ height }} role="img" aria-label={ariaLabel}>
-        {data.map((point) => {
+        {data.map((point, index) => {
           const expenseHeight = (Math.abs(point.value) / max) * (height - 24);
           const incomeHeight =
             point.secondary !== undefined ? (Math.abs(point.secondary) / max) * (height - 24) : 0;
+          const delay = `${Math.min(index * 24, 180)}ms`;
           return (
             <div key={point.label} className="group flex h-full flex-1 flex-col justify-end gap-0.5">
               <div className="flex flex-1 items-end justify-center gap-0.5">
                 {point.secondary !== undefined && (
                   <div
-                    className="w-2.5 rounded-t-[3px] bg-income/80 transition-opacity group-hover:opacity-100 sm:w-3.5"
-                    style={{ height: `${Math.max(2, incomeHeight)}px` }}
+                    className="w-2.5 origin-bottom animate-bar-grow rounded-t-[3px] bg-income/80 transition-opacity group-hover:opacity-100 sm:w-3.5"
+                    style={{ height: `${Math.max(2, incomeHeight)}px`, animationDelay: delay }}
                     title={`${point.label} in: ${format(point.secondary)}`}
                   />
                 )}
                 <div
-                  className="w-2.5 rounded-t-[3px] bg-primary/85 transition-opacity group-hover:opacity-100 sm:w-3.5"
-                  style={{ height: `${Math.max(2, expenseHeight)}px` }}
+                  className="w-2.5 origin-bottom animate-bar-grow rounded-t-[3px] bg-primary/85 transition-opacity group-hover:opacity-100 sm:w-3.5"
+                  style={{ height: `${Math.max(2, expenseHeight)}px`, animationDelay: delay }}
                   title={`${point.label} out: ${format(point.value)}`}
                 />
               </div>
@@ -180,7 +181,7 @@ export function LineChart({
     <figure className="w-full">
       <figcaption className="sr-only">{ariaLabel}</figcaption>
       <div role="img" aria-label={ariaLabel} className="relative w-full" style={{ height }}>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full overflow-visible">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full animate-fade-in overflow-visible">
           {fill && (
             <>
               <defs>
@@ -270,7 +271,7 @@ export function DonutChart({
     <figure className="flex items-center gap-4">
       <figcaption className="sr-only">{ariaLabel}</figcaption>
       <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={ariaLabel}>
-        <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 animate-fade-in">
           <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={TOKEN.grid} strokeWidth={thickness} opacity={0.55} />
           {segments.map((segment) => (
             <circle
@@ -346,7 +347,7 @@ export function RankedBars({
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
               <div
-                className="h-full rounded-full transition-[width] duration-500 ease-smooth"
+                className="h-full origin-left animate-progress-in rounded-full transition-[width] duration-reveal ease-smooth"
                 style={{ width: `${(Math.abs(row.value) / max) * 100}%`, backgroundColor: TOKEN[tone] }}
               />
             </div>
@@ -368,7 +369,7 @@ export function Sparkline({ values, className = "", tone = "primary" }: { values
     .join(" ");
 
   return (
-    <svg viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true" className={`h-6 w-20 ${className}`}>
+    <svg viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true" className={`h-6 w-20 animate-fade-in ${className}`}>
       <polyline points={points} fill="none" stroke={TOKEN[tone]} strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );

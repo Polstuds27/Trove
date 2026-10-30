@@ -8,7 +8,7 @@
  *
  * Bump VERSION whenever the precached shell changes.
  */
-const VERSION = "fintrack-shell-v1";
+const VERSION = "fintrack-shell-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -20,6 +20,20 @@ const SHELL = [
   "/icons/icon-512.png",
   "/icons/maskable-512.png",
   "/icons/apple-touch-icon.png",
+  "/icons/bank-icons/bdo-logo.jpg",
+  "/icons/bank-icons/bpi-logo.jfif",
+  "/icons/bank-icons/metrobank-logo.jpg",
+  "/icons/bank-icons/landbank-logo.jfif",
+  "/icons/bank-icons/pnb-logo.png",
+  "/icons/bank-icons/securitybank-logo.png",
+  "/icons/bank-icons/unionbank-logo.png",
+  "/icons/bank-icons/rcbc-logo.jfif",
+  "/icons/bank-icons/chinabank-logo.jpg",
+  "/icons/bank-icons/eastwest-logo.jpg",
+  "/icons/bank-icons/gotyme-logo.jpg",
+  "/icons/bank-icons/maya-logo.png",
+  "/icons/bank-icons/maribank-logo.jfif",
+  "/icons/bank-icons/gcash-logo.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -68,6 +82,9 @@ async function handleNavigation(request) {
 
 /** Hashed assets: cache-first, refreshed in the background. */
 async function handleAsset(request) {
+  // Bank logos were precached on install, including ones never displayed yet.
+  const precached = await caches.match(request, { cacheName: SHELL_CACHE });
+  if (precached) return precached;
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await cache.match(request);
   const network = fetch(request)
@@ -93,7 +110,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (
-    url.pathname.startsWith("/assets/") ||
+    url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/bank-icons/") ||
     /\.(js|css|png|svg|webp|woff2?|json|webmanifest)$/.test(url.pathname)
   ) {
     event.respondWith(handleAsset(request));

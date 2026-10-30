@@ -5,7 +5,7 @@
  * numbers are the ones the engine will act on next run.
  */
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AlertTriangle, CloudUpload, RefreshCw, WifiOff } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Badge, Button, Card, DetailRow, Divider, LinkButton } from "../../components/ui";
@@ -13,7 +13,7 @@ import { formatDateTime, formatRelativeTime } from "../../design/format";
 import { db } from "../../db";
 import { pendingMutations, outboxTotal, parkedEntries, retryMutation, retryAllParked } from "../../sync/outbox";
 import { useSync } from "../../sync/SyncContext";
-import { useAuth } from "../../auth/AuthContext";
+import { useSessionRecovery } from "../../auth/SessionRecovery";
 import type { OutboxEntry } from "../../db/types";
 import { Panel } from "./Panel";
 
@@ -28,8 +28,7 @@ const STATUS_TONE = {
 
 export function SyncSection() {
   const { status, pendingCount, conflicts, lastSyncedAt, syncNow } = useSync();
-  const { flushCredentials } = useAuth();
-  const navigate = useNavigate();
+  const reSignIn = useSessionRecovery();
   const [busy, setBusy] = useState(false);
   const [queue, setQueue] = useState<OutboxEntry[]>([]);
   // Entries the server rejected (or that stopped returning results) leave the
@@ -38,14 +37,6 @@ export function SyncSection() {
   // Signed out, the owner filter hides everything — but the rows are still
   // held on this device, so count them separately instead of claiming zero.
   const [held, setHeld] = useState(0);
-
-  // The stored token is dead (rotation fails): flush it and land on a real
-  // sign-in form. A plain link would bounce straight back — the stale token
-  // keeps `isAuthenticated` true and `/login` redirects authenticated users.
-  function reSignIn() {
-    flushCredentials();
-    navigate("/login", { replace: true });
-  }
 
   const conflictRows = useLiveQuery(async () => db.conflicts.toArray(), [], undefined);
 
