@@ -87,9 +87,31 @@ export function resolveTheme(theme: ThemeMode): "light" | "dark" {
   return theme;
 }
 
+let themeSwitchTimer: ReturnType<typeof setTimeout> | undefined;
+
 function applyTheme(theme: ThemeMode): void {
   if (typeof document === "undefined") return;
   const resolved = resolveTheme(theme);
+  const root = document.documentElement;
+  const previous = root.dataset.theme;
+  // First paint, or nothing to change: apply instantly.
+  if (!previous || previous === resolved) {
+    setThemeAttributes(resolved);
+    return;
+  }
+  // Light <-> dark: cross-fade so the switch isn't a hard flash.
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  if (typeof doc.startViewTransition === "function") {
+    doc.startViewTransition(() => setThemeAttributes(resolved));
+    return;
+  }
+  root.classList.add("theme-switching");
+  setThemeAttributes(resolved);
+  clearTimeout(themeSwitchTimer);
+  themeSwitchTimer = setTimeout(() => root.classList.remove("theme-switching"), 500);
+}
+
+function setThemeAttributes(resolved: "light" | "dark"): void {
   document.documentElement.dataset.theme = resolved;
   document.documentElement.style.colorScheme = resolved;
   const meta = document.querySelector('meta[name="theme-color"]');

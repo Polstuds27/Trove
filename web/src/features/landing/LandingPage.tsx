@@ -11,6 +11,7 @@ import { ArrowRight, Sprout } from "lucide-react";
 import { Mascot } from "../../components/ui";
 import type { MascotState } from "../../lib/mascot";
 import { InstallSection } from "./InstallSection";
+import { Reveal } from "./Reveal";
 
 interface Feature {
   title: string;
@@ -146,7 +147,7 @@ export function LandingPage() {
       <main id="main">
         {/* -------------------------------------------------------- hero */}
         <section className="mx-auto grid max-w-[1200px] items-center gap-12 px-5 py-12 sm:px-6 lg:grid-cols-[1.04fr_0.96fr] lg:gap-8 lg:py-20">
-          <div>
+          <Reveal>
             <span className="inline-flex items-center gap-2 rounded-full bg-sage-light px-3.5 py-1.5 text-[11.5px] font-semibold text-primary dark:bg-primary-soft">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-primary dark:bg-sage" />
               Offline-first personal finance
@@ -183,19 +184,19 @@ export function LandingPage() {
                 Or install the app ↓
               </a>
             </div>
-          </div>
+          </Reveal>
 
-          <div className="relative mx-auto flex w-full max-w-[430px] items-center justify-center">
+          <Reveal delay={140} className="relative mx-auto flex w-full max-w-[430px] items-center justify-center">
             <div className="flex h-[280px] w-[280px] items-center justify-center sm:h-[360px] sm:w-[360px] lg:h-[420px] lg:w-[420px]">
               <Mascot state="landingHero" size={390} className="max-h-[92%] max-w-[92%] sm:max-h-none sm:max-w-none" />
             </div>
-          </div>
+          </Reveal>
         </section>
 
         {/* ----------------------------------------------------- features */}
         <section id="features" className="scroll-mt-24">
           <div className="mx-auto max-w-[1200px] px-5 py-14 sm:px-6 lg:py-20">
-            <div className="max-w-[46rem]">
+            <Reveal className="max-w-[46rem]">
               <Eyebrow>What you get</Eyebrow>
               <h2 className="mt-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.035em] text-primary sm:text-[38px] lg:text-[44px]">
                 Everything a money manager should do — offline included
@@ -204,12 +205,14 @@ export function LandingPage() {
                 Accounts, budgets, bills, goals and reports. Not a demo: the reporting engine runs on
                 your device, so the numbers are there even when the network isn't.
               </p>
-            </div>
+            </Reveal>
 
             <div className="mt-9 grid gap-[17px] sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map(({ title, body, state }) => (
-                <article
+              {FEATURES.map(({ title, body, state }, i) => (
+                <Reveal
+                  as="article"
                   key={title}
+                  delay={(i % 3) * 90}
                   className="relative overflow-hidden rounded-[28px] border border-line/50 bg-surface p-6 pb-7 shadow-card"
                 >
                   <div className="relative z-10 max-w-[26rem] pr-[64px]">
@@ -223,7 +226,7 @@ export function LandingPage() {
                     size={76}
                     className="pointer-events-none absolute -bottom-1 right-1 opacity-95"
                   />
-                </article>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -232,17 +235,19 @@ export function LandingPage() {
         {/* --------------------------------------------------- how it works */}
         <section id="how" className="scroll-mt-24">
           <div className="mx-auto max-w-[1200px] px-5 pb-14 sm:px-6 lg:pb-20">
-            <div className="max-w-[40rem]">
+            <Reveal className="max-w-[40rem]">
               <Eyebrow>How it works</Eyebrow>
               <h2 className="mt-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.035em] text-primary sm:text-[38px] lg:text-[44px]">
                 Three steps, then it runs itself
               </h2>
-            </div>
+            </Reveal>
 
             <ol className="mt-9 grid gap-[17px] md:grid-cols-3">
-              {STEPS.map(({ step, title, body, state }) => (
-                <li
+              {STEPS.map(({ step, title, body, state }, i) => (
+                <Reveal
+                  as="li"
                   key={step}
+                  delay={i * 110}
                   className="relative overflow-hidden rounded-[28px] border border-line/50 bg-surface p-6 pb-7 shadow-card"
                 >
                   <div className="relative z-10 pr-[58px]">
@@ -260,14 +265,16 @@ export function LandingPage() {
                     size={72}
                     className="pointer-events-none absolute -bottom-1 right-1 opacity-95"
                   />
-                </li>
+                </Reveal>
               ))}
             </ol>
           </div>
         </section>
 
         {/* ------------------------------------------------------- install */}
-        <InstallSection />
+        <Reveal>
+          <InstallSection />
+        </Reveal>
       </main>
 
       {/* ---------------------------------------------------------- footer */}

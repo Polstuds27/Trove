@@ -773,3 +773,52 @@
     text-wrap: pretty;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Landing scroll reveal (see features/landing/Reveal.tsx)
+ * ------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  translate: 0 28px;
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    translate 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal[data-revealed] {
+  opacity: 1;
+  translate: 0 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    translate: none;
+    transition: opacity 0.4s ease;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Theme switch: soft cross-fade instead of a hard flash.
+ * View Transitions where supported; otherwise `.theme-switching` (set briefly
+ * by applyTheme) eases every colour property.
+ * ------------------------------------------------------------------------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition-property: background-color, color, border-color, outline-color, fill, stroke, box-shadow,
+    text-decoration-color !important;
+  transition-duration: 0.45s !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-delay: 0s !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.2s;
+  }
+}
