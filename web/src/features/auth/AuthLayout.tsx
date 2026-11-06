@@ -94,12 +94,6 @@ export function AuthLayout({
                 Trove
               </span>
             </Link>
-            <Link
-              to="/register"
-              className="text-[12px] font-semibold text-primary hover:underline lg:hidden"
-            >
-              Create account
-            </Link>
           </div>
 
           <div className="mt-6 flex justify-center lg:hidden">
