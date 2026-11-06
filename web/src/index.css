@@ -779,21 +779,34 @@
  * ------------------------------------------------------------------------- */
 .reveal {
   opacity: 0;
-  translate: 0 28px;
+  translate: 0 48px;
+  scale: 0.97;
+  filter: blur(6px);
   transition:
-    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    translate 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    translate 1s cubic-bezier(0.16, 1, 0.3, 1),
+    scale 1s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.9s cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
 .reveal[data-revealed] {
   opacity: 1;
   translate: 0 0;
+  scale: 1;
+  filter: none;
 }
+/* Reduced motion: no movement, but keep a gentle fade. The global
+ * reduced-motion rule zeroes every transition, so this needs !important. */
+@layer base {
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     translate: none;
-    transition: opacity 0.4s ease;
+    scale: none;
+    filter: none;
+    transition: opacity 0.7s ease !important;
+    transition-delay: var(--reveal-delay, 0ms) !important;
   }
+}
 }
 
 /* ---------------------------------------------------------------------------
