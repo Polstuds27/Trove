@@ -42,7 +42,8 @@ Do **not** run `python manage.py migrate` automatically. Generate migrations wit
 
 ## Design
 
-UI colors/theme: follow `docs/theme.md` (Deep Emerald primary, Mint accent, Slate neutrals). Apply starting in Phase 5 frontend work.
+UI colors/theme: follow `docs/theme.md` and `DESIGN.md` (Forest, Sage, Cream, Sand; Inter). Third-party component provenance is recorded in `DESIGN.md`.
 
-- This repo is a fresh, empty git init on branch `master` — no commits, no source files, no README, no package manifests. There are no build/test/lint commands to run; do not invent any.
-- It is nested inside a second, also-empty git repo at `C:\Users\leomo\Desktop`. That nesting breaks git operations in the parent: `git add`/status over `FinTrack/` fails with `'FinTrack/' does not have a commit checked out` (observed in OpenCode snapshot logs). Commit or remove the nested repo before expecting parent-repo git commands to work.
+## Commands (web/)
+
+`npm run lint`, `npm run typecheck`, `npm run test` (vitest), `npm run build`. Backend (api/): `ruff`, `mypy`, `pytest`.

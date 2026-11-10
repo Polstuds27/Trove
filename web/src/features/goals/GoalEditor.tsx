@@ -24,10 +24,13 @@ import {
   Overlay,
   Select,
   useToast,
+  DatePicker,
 } from "../../components/ui";
+import { usePreferences } from "../settings/preferences";
 import { useLocalData } from "../analytics/useLocalData";
 
 export function GoalEditor() {
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
   const toast = useToast();
   const { goalId: rawGoalId } = useParams<{ goalId: string }>();
@@ -201,11 +204,12 @@ export function GoalEditor() {
                 ),
               )}
             </Select>
-            <Input
+            <DatePicker
               label="Target date"
-              type="date"
               value={targetDate}
-              onChange={(event) => setTargetDate(event.target.value)}
+              onChange={setTargetDate}
+              placeholder="No target date"
+              weekStartsOn={preferences.weekStartsOn}
               hint="Optional — enables the required-per-month figure."
             />
           </div>

@@ -21,6 +21,7 @@ import {
   LinkButton,
   Mascot,
   MascotPanel,
+  MoneyValue,
   PageHeader,
   ProgressBar,
   SectionHeading,
@@ -332,7 +333,7 @@ export function OverviewPage() {
           <div className="relative z-10 max-w-[62%]">
             <p className="text-[12px] text-white/60">Total balance</p>
             <p className="tabular mt-1.5 text-[34px] font-bold leading-none tracking-[-0.035em] text-[#f4eedf]">
-              {formatMoney(totals.assets, currency)}
+              <MoneyValue amount={totals.assets} currency={currency} animate />
             </p>
             {deltaText && (
               <p className={`mt-2 text-[12px] font-semibold ${balanceDelta !== null && balanceDelta >= 0 ? "text-[#9bb587]" : "text-[#e39a74]"}`}>
@@ -468,7 +469,9 @@ export function OverviewPage() {
               Here's how your money is doing this month.
             </p>
             <p className="mt-8 text-[12px] font-medium text-muted">Total balance</p>
-            <p className="trove-hero-amount mt-1">{formatMoney(totals.assets, currency)}</p>
+            <p className="trove-hero-amount mt-1">
+              <MoneyValue amount={totals.assets} currency={currency} animate />
+            </p>
             {deltaText && (
               <p className={`mt-2.5 text-[12px] font-semibold ${balanceDelta !== null && balanceDelta >= 0 ? "text-income" : "text-expense"}`}>
                 {deltaText} <span className="font-normal text-muted">vs. last month</span>

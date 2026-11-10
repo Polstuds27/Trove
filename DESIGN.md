@@ -79,7 +79,7 @@ Canvas is `#131C16` (warm night forest), not a desaturated light theme.
 
 ## Typography
 
-- **Font stack:** system first, no webfont — `-apple-system, system-ui, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif` (defined in `web/tailwind.config.cjs`).
+- **Font:** Inter, self-hosted via `@fontsource/inter` (weights 400/500/600/700, Latin + Latin Extended so ₱ and other currency marks render in Inter). Imported in `web/src/main.tsx`; files ship in `/assets/` and are cached by the service worker, so typography is identical offline. No Google Fonts request. System stack remains the fallback (`web/tailwind.config.cjs`).
 - **`font-feature-settings`:** `"cv02", "cv03", "cv04", "tnum" 0` on `body` — tabular numerals default **off** (`tnum` 0).
 - **Tabular numerals on money:** `.tabular` / `[data-numeric="true"]` → `font-variant-numeric: tabular-nums` (used on every monetary figure so columns line up).
 - **Body measure:** 65–75ch.
@@ -122,6 +122,28 @@ Canvas is `#131C16` (warm night forest), not a desaturated light theme.
 
 ---
 
+## Third-party component provenance
+
+All licenses verified as MIT on 2026-11-10. Components were adapted into Trove's own system (tokens, a11y, no new runtime dependency); each file's header names its source and what changed.
+
+| Trove component | Source library | Original component | Used on |
+|---|---|---|---|
+| `DonutChart` (`ui/DonutChart.tsx`) | EasyUI (Suraj Maurya) | `DonutChart` | Statistics (linked legend), Budget detail (semi gauge) |
+| `ActivityHeatmap` (`ui/ActivityHeatmap.tsx`) | EasyUI | `ActivityHeatmap` | Statistics — daily spending, 26 weeks |
+| `MoneyValue` (`ui/MoneyValue.tsx`) | EasyUI | `AnimatedNumber` | Overview, Accounts, Budget hero totals |
+| `ProgressRing` (`ui/ProgressRing.tsx`) | OpenSource UI (Bidyut Kundu) | `ProgressRingCard` | Debt, Installment, Goal detail |
+| `OtpInput` (`ui/OtpInput.tsx`) | OpenSource UI | `OtpBoxedInput` | MFA (authenticator + emailed codes) |
+| Quick-date chips (TransactionForm) | OpenSource UI | `DateFieldInput` "Today" shortcut | Transaction add/edit |
+| `BreakdownBar` (`ui/BreakdownBar.tsx`) | Watermelon UI | `BudgetCard` breakdown | Budget |
+| `StatusDot` (`ui/Trove.tsx`) | Watermelon UI | `StatusIndicator` | Sync indicator, Settings › Sync |
+| `.skeleton` shimmer (`index.css`) | Amicro (Syed Subhan Uddin) | `skeleton` | All skeletons |
+| `Spinner` (`ui/Spinner.tsx`) | Amicro | `ios-spinner` | Route loader, verify email |
+| `useStagger` / `.stagger-list`, `useHaptics` (`lib/motion.ts`) | Amicro | `use-stagger`, `use-web-haptics` | Transaction lists; save success/failure |
+
+**PanelUI** (MIT) was evaluated and not integrated: it is React Native / Expo only (`react-native-reanimated`, `react-native-svg`, Expo modules), with no web build.
+
+Other Trove-native additions: `DueBadge` (due-date chip for debts, recurring, installments), `DetailSkeleton` (detail-screen loading), route-level lazy loading with idle prefetch (`web/src/app/lazyRoutes.ts`).
+
 ## Mascot policy
 
 - Approved sprout artwork reused **as-is** from `web/public/mascot/refined/` (16 RGBA PNGs, provenance in `public/mascot/refined/manifest.json`, generated from the Trove Sprite Atlas).
@@ -134,9 +156,12 @@ Canvas is `#131C16` (warm night forest), not a desaturated light theme.
 
 ## Motion / respect
 
-- **No animation library.** Transitions are plain CSS/Tailwind.
-- **Reduced motion:** `prefers-reduced-motion: reduce` honored via the app-wide hook in `index.css` (all `animation-duration`/`transition-duration` collapse to 0.01ms).
-- **Transitions:** only `duration-150` on the FAB active state (`active:scale-95`).
+- **No animation library.** Every interaction ported from a third-party library had its Framer Motion / `motion` code rewritten as CSS transitions or keyframes.
+- **Tokens:** `--motion-fast` 140ms, `--motion-base` 200ms, `--motion-slow` 280ms, `--motion-reveal` 420ms; easing `--ease-out-soft`. Tailwind: `duration-fast|base|slow|reveal`, `ease-out-soft`.
+- **Reduced motion:** honored by the app-wide rule in `index.css` plus `useReducedMotion()` (`web/src/lib/motion.ts`) for JS-driven motion (MoneyValue digit roll, heatmap cell pop-in, haptics).
+- **Buttons:** press = `scale(0.97)` in 60ms; primary lifts 1px on hover (hover-capable pointers only); one soft focus ring for all buttons.
+- **Lists:** `.stagger-list` animates only the first 8 rows (28ms apart); longer lists render instantly.
+- **Money:** `MoneyValue animate` rolls digits on hero totals only (Overview, Accounts, Budget). Never in list rows.
 
 ---
 
@@ -204,7 +229,7 @@ Global:
 
 ## Remaining issues (non-blocking)
 
-1. **docs/theme.md stale** — still documents the old Deep Emerald / Mint / Slate palette; not updated to the forest/sage/cream/sand tokens shipped in `index.css`.
+1. ~~docs/theme.md stale~~ — resolved: it documents the forest/sage/cream/sand palette.
 2. **Overview mobile source order** — mobile source order not yet aligned with the desktop visual hierarchy.
 3. **Quick-action sheet shipped opaque** — glass contract permits it but the sheet is opaque; true glass blur not applied.
 4. **caret-color not explicitly themed** — no explicit caret-color token; falls back to ink.

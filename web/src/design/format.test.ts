@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   addDays,
   byCreatedDesc,
@@ -29,7 +29,14 @@ describe("formatRelativeDay", () => {
     );
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("agrees with the calendar day of ISO instants", () => {
+    // Pin "now" to the same instant so the assertion holds on any day it runs.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-07T04:00:00.000Z"));
     expect(toDateKey("2026-10-07T04:00:00.000Z")).toBe(toDateKey(new Date()));
     expect(todayKey()).toBe(toDateKey(new Date()));
   });

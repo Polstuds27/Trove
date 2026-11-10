@@ -22,10 +22,13 @@ import {
   Select,
   Textarea,
   useToast,
+  DatePicker,
 } from "../../components/ui";
+import { usePreferences } from "../settings/preferences";
 import { useLocalData } from "../analytics/useLocalData";
 
 export function DebtEditor() {
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
   const toast = useToast();
   const { debtId: rawDebtId } = useParams<{ debtId: string }>();
@@ -212,11 +215,12 @@ export function DebtEditor() {
                 </option>
               ))}
             </Select>
-            <Input
+            <DatePicker
               label="Due date"
-              type="date"
               value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
+              onChange={setDueDate}
+              placeholder="No due date"
+              weekStartsOn={preferences.weekStartsOn}
               hint="Optional — drives the overdue badge."
             />
           </div>

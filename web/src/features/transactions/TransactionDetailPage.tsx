@@ -254,9 +254,9 @@ export function TransactionDetailPage() {
                 <span className="text-xs text-faint">No tags</span>
               ) : (
                 tags.map((name) => (
-                  <span key={name} className="badge-primary">
+                  <Badge key={name} tone="primary">
                     {name}
-                  </span>
+                  </Badge>
                 ))
               )}
             </div>

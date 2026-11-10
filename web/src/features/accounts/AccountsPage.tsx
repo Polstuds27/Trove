@@ -25,6 +25,9 @@ import {
   MascotTipCard,
   Dropdown,
   GlassPanel,
+  MoneyValue,
+  Skeleton,
+  SkeletonRows,
   LinkButton,
   PageHeader,
   ProgressBar,
@@ -158,8 +161,8 @@ export function AccountsPage() {
 
       {!ready ? (
         <div className="grid gap-[17px] lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
-          <div className="trove-card h-[380px] animate-pulse" />
-          <div className="trove-card hidden h-[380px] animate-pulse lg:block" />
+          <div className="trove-card h-[380px] overflow-hidden py-3"><SkeletonRows rows={5} /></div>
+          <div className="trove-card hidden h-[380px] p-6 lg:block"><Skeleton className="h-full w-full rounded-2xl" /></div>
         </div>
       ) : visible.length === 0 ? (
         <GlassPanel className="px-6 py-12">
@@ -192,7 +195,7 @@ export function AccountsPage() {
                 Total assets · {visible.length} {visible.length === 1 ? "account" : "accounts"}
               </p>
               <p className="tabular mt-1.5 text-[36px] font-bold leading-none tracking-[-0.035em] text-primary">
-                {formatMoney(summary.assets, currency)}
+                <MoneyValue amount={summary.assets} currency={currency} animate />
               </p>
               <p className="mt-2 text-[12px] text-muted">
                 {formatMoney(summary.netWorth, currency)} net worth

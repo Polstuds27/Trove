@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { LocalTransaction } from "../../db/types";
 import { AmountCalculator } from "./AmountCalculator";
+import { useHaptics } from "../../lib/motion";
 import { CURRENCIES, fromDateTimeInput, toDateTimeInput } from "../../design/format";
 import {
   AmountInput,
@@ -29,6 +30,8 @@ import {
   Select,
   Textarea,
   useToast,
+  DatePicker,
+  TimePicker,
 } from "../../components/ui";
 import { useLocalData } from "../analytics/useLocalData";
 import { usePreferences } from "../settings/preferences";
@@ -63,6 +66,19 @@ export interface TransactionFormProps {
   dense?: boolean;
 }
 
+const QUICK_DATES = [
+  { label: "Now", daysAgo: 0 },
+  { label: "Yesterday", daysAgo: 1 },
+  { label: "2 days ago", daysAgo: 2 },
+];
+
+/** Today keeps the current time; earlier days keep the current clock time too. */
+function quickDateValue(daysAgo: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return toDateTimeInput(date);
+}
+
 export function TransactionForm({
   transaction,
   initialType,
@@ -73,6 +89,7 @@ export function TransactionForm({
   const { lookups } = useLocalData();
   const { preferences, update } = usePreferences();
   const toast = useToast();
+  const haptic = useHaptics();
 
   const accounts = useMemo(
     () => lookups.dataset.accounts.filter((a) => !a.archived).sort((a, b) => a.name.localeCompare(b.name)),
@@ -233,8 +250,10 @@ export function TransactionForm({
               ? undefined
               : "Stored on this device and queued for sync.",
       });
+      haptic("success");
       onSaved?.(saved.id);
     } catch (err) {
+      haptic("warning");
       setError(err instanceof Error ? err.message : "Couldn't save that transaction.");
     } finally {
       setBusy(false);
@@ -341,14 +360,51 @@ export function TransactionForm({
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input
-          label="Date & time"
-          type="datetime-local"
-          value={dateTime}
-          max={toDateTimeInput(new Date())}
-          onChange={(e) => setDateTime(e.target.value)}
-          required
-        />
+        <div>
+          {/* EasyUI-style date picker + Trove time picker, recombined into the
+              same "YYYY-MM-DDTHH:mm" value the form has always saved. */}
+          <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-end gap-2">
+            <DatePicker
+              label="Date"
+              value={dateTime.slice(0, 10)}
+              max={toDateTimeInput(new Date()).slice(0, 10)}
+              onChange={(day) => day && setDateTime(`${day}T${dateTime.slice(11, 16) || "12:00"}`)}
+              weekStartsOn={preferences.weekStartsOn}
+              required
+            />
+            <TimePicker
+              label="Time"
+              value={dateTime.slice(11, 16)}
+              onChange={(time) => {
+                // The date half always stays; only the time changes.
+                if (time) setDateTime(`${dateTime.slice(0, 10)}T${time}`);
+              }}
+              required
+            />
+          </div>
+          {/* One-tap shortcuts for the most common backdates (the "Today"
+              shortcut idea from OpenSource UI's DateFieldInput). The native
+              picker stays, since it carries the time as well as the day. */}
+          <div className="mt-1.5 flex gap-1.5" role="group" aria-label="Quick date">
+            {QUICK_DATES.map((option) => {
+              const value = quickDateValue(option.daysAgo);
+              const on = dateTime.slice(0, 10) === value.slice(0, 10);
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setDateTime(value)}
+                  className={`min-h-[30px] rounded-full px-2.5 text-[12px] font-medium ${
+                    on ? "bg-primary-soft-bg text-primary" : "text-muted hover:bg-surface-sunken hover:text-ink"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         {type !== "transfer" && (
           <Select
             label="Currency"

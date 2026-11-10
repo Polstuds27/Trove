@@ -212,6 +212,26 @@ export function categoryBreakdown(
 
 /* ------------------------------------------------------------------ series */
 
+/**
+ * Per-day totals for one transaction type, in the base currency. Same rules as
+ * `categoryBreakdown` (absolute amounts, converted with the FX table), keyed by
+ * local calendar day. Feeds the activity heatmap; adds no new financial logic.
+ */
+export function dailyTotals(
+  transactions: LocalTransaction[],
+  range: DateRange | null,
+  lookups: Lookups,
+  type: "income" | "expense" = "expense",
+): { date: string; value: number }[] {
+  const totals = new Map<string, number>();
+  for (const tx of transactions) {
+    if (tx.type !== type || !inRange(tx.date, range)) continue;
+    const key = toDateKey(tx.date);
+    totals.set(key, (totals.get(key) ?? 0) + convert(Math.abs(tx.amount), tx.currency, lookups.fx));
+  }
+  return [...totals.entries()].map(([date, value]) => ({ date, value }));
+}
+
 export interface SeriesPoint {
   key: string;
   label: string;

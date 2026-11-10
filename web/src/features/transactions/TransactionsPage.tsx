@@ -553,7 +553,7 @@ export function TransactionsPage() {
           groups.map((group) => {
             const totals = dayTotals(group.rows, lookups.fx);
             return (
-              <section key={group.key}>
+              <section key={group.key} className="lazy-render">
                 <div className="mb-1.5 flex items-baseline justify-between gap-3 px-1">
                   <h2 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
                     {group.label}

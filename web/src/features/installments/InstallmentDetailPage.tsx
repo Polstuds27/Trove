@@ -19,8 +19,9 @@ import {
   EmptyState,
   IconButton,
   PageHeader,
-  ProgressBar,
+  ProgressRing,
   useToast,
+  DetailSkeleton,
 } from "../../components/ui";
 import { byTxNewest, formatDate, formatMoney, formatPercent, formatRelativeDay } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
@@ -52,6 +53,8 @@ export function InstallmentDetailPage() {
         .sort(byTxNewest),
     [dataset.transactions, installmentId],
   );
+
+  if (!item && !ready) return <DetailSkeleton />;
 
   if (!item) {
     return (
@@ -120,8 +123,15 @@ export function InstallmentDetailPage() {
       />
 
       <Card>
-        <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4">
-          <div>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-4">
+          <ProgressRing
+            value={item.percent}
+            tone={done ? "income" : "primary"}
+            label="Repayment progress"
+            caption="paid"
+            size={92}
+          />
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-medium tracking-wide text-muted uppercase">Remaining</p>
             <p className="tabular mt-0.5 text-display-sm font-semibold text-ink">
               {formatMoney(remaining, plan.currency)}
@@ -133,12 +143,7 @@ export function InstallmentDetailPage() {
           <Badge tone={done ? "income" : "primary"}>{done ? "Settled" : `${item.remainingParts} left`}</Badge>
         </div>
         <div className="px-4 pb-4">
-          <ProgressBar
-            value={Math.min(100, item.percent)}
-            tone={done ? "income" : "primary"}
-            label="Repayment progress"
-          />
-          <p className="mt-1.5 text-xs text-muted">{formatPercent(item.percent)} of the purchase paid.</p>
+          <p className="text-xs text-muted">{formatPercent(item.percent)} of the purchase paid.</p>
         </div>
 
         <Divider />

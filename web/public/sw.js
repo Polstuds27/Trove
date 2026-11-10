@@ -8,7 +8,7 @@
  *
  * Bump VERSION whenever the precached shell changes.
  */
-const VERSION = "fintrack-shell-v2";
+const VERSION = "fintrack-shell-v3";
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 

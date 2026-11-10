@@ -1,3 +1,4 @@
+import { Badge } from "./Badge";
 import { Link } from "react-router-dom";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Mascot } from "./Mascot";
@@ -87,41 +88,9 @@ export function PillLink({
 
 /* -------------------------------------------------------------------- toggle */
 
-export function Toggle({
-  checked,
-  onChange,
-  label,
-  disabled = false,
-  id,
-}: {
-  checked: boolean;
-  onChange: (next: boolean) => void;
-  label: string;
-  disabled?: boolean;
-  id?: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      id={id}
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-primary dark:bg-sage" : "bg-surface-sunken"
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-base ease-smooth dark:bg-cream ${
-          checked ? "translate-x-5" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
+// Toggle lives in Toggle.tsx (EasyUI LiquidToggle port); re-exported here so
+// existing imports keep working.
+export { Toggle } from "./Toggle";
 
 /* ---------------------------------------------------------------- stat cards */
 
@@ -336,13 +305,75 @@ export function MascotPanel({
 
 /* --------------------------------------------------------- small primitives */
 
+/** Schedule status (installments): Paid · Next · Upcoming, as dotted badges. */
 export function StatusBadge({ status }: { status: "paid" | "next" | "upcoming" }) {
-  const map = {
-    paid: { label: "Paid", cls: "badge-paid" },
-    next: { label: "Next", cls: "badge-next" },
-    upcoming: { label: "Upcoming", cls: "badge-upcoming" },
-  }[status];
-  return <span className={map.cls}>{map.label}</span>;
+  const label = { paid: "Paid", next: "Next", upcoming: "Upcoming" }[status];
+  return (
+    <Badge tone={status} dot>
+      {label}
+    </Badge>
+  );
+}
+
+/**
+ * Due-date chip: one consistent read of "how soon" across debts, recurring
+ * rules and installments. Tone escalates: later → soon (≤7 days) → today →
+ * overdue. Pure presentation over a day count the caller already computed.
+ */
+export function DueBadge({ days, className = "" }: { days: number | null; className?: string }) {
+  if (days === null) return null;
+  const overdue = days < 0;
+  const label = overdue
+    ? `${Math.abs(days)}d overdue`
+    : days === 0
+      ? "Due today"
+      : days === 1
+        ? "Tomorrow"
+        : `In ${days}d`;
+  const tone = overdue ? "expense" : days <= 1 ? "warning" : days <= 7 ? "primary" : "neutral";
+  const spoken = overdue
+    ? `Overdue by ${Math.abs(days)} ${Math.abs(days) === 1 ? "day" : "days"}`
+    : days === 0
+      ? "Due today"
+      : `Due in ${days} ${days === 1 ? "day" : "days"}`;
+  return (
+    <Badge tone={tone} dot={overdue || days <= 1} aria-label={spoken} className={`h-5 px-2 text-[10.5px] ${className}`}>
+      {label}
+    </Badge>
+  );
+}
+
+/**
+ * Live status dot with an optional ping halo.
+ *
+ * Adapted from Watermelon UI's `StatusIndicator` (MIT, WatermelonCorp,
+ * github.com/WatermelonCorp/watermellon-registry): solid dot plus a pinging
+ * halo for "active" states. Trove changes: semantic tones instead of raw
+ * green/red/yellow, the halo only pings for states that are genuinely in
+ * progress, and reduced motion leaves a static dot.
+ */
+export function StatusDot({
+  tone,
+  pulse = false,
+  className = "",
+}: {
+  tone: "income" | "warning" | "expense" | "muted" | "primary";
+  pulse?: boolean;
+  className?: string;
+}) {
+  const color = {
+    income: "bg-income",
+    warning: "bg-warning",
+    expense: "bg-expense",
+    muted: "bg-faint",
+    primary: "bg-primary",
+  }[tone];
+  return (
+    <span aria-hidden="true" className={`relative inline-flex h-2 w-2 shrink-0 ${className}`}>
+      {pulse && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 motion-reduce:hidden ${color}`} />}
+      <span className={`relative inline-flex h-2 w-2 rounded-full ${color}`} />
+    </span>
+  );
 }
 
 export function DetailLine({ label, children }: { label: ReactNode; children: ReactNode }) {

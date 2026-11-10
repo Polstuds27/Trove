@@ -8,7 +8,7 @@
  */
 import { Link } from "react-router-dom";
 import { ArrowRight, Sprout } from "lucide-react";
-import { Mascot } from "../../components/ui";
+import { Badge, GlassNavbar, Mascot } from "../../components/ui";
 import type { MascotState } from "../../lib/mascot";
 import { InstallSection } from "./InstallSection";
 import { Reveal } from "./Reveal";
@@ -110,48 +110,43 @@ export function LandingPage() {
       </a>
 
       {/* ---------------------------------------------------------- header */}
-      <header className="sticky top-0 z-40 bg-canvas/85 backdrop-blur">
-        <div className="mx-auto flex h-[74px] max-w-[1200px] items-center justify-between gap-4 px-5 sm:px-6">
-          <BrandMark compact />
-
-          <nav aria-label="Sections" className="hidden items-center gap-8 md:flex">
-            {[
-              ["Features", "#features"],
-              ["How it works", "#how"],
-              ["Get the app", "#install"],
-            ].map(([label, href]) => (
-              <a
-                key={href}
-                href={href}
-                className="text-[13.5px] font-medium text-muted transition-colors hover:text-primary"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
+      {/* Floating glass navbar (EasyUI GlassNavbar → GlassNavbar). */}
+      <GlassNavbar
+        brand={<BrandMark compact />}
+        items={[
+          { label: "Features", href: "#features" },
+          { label: "How it works", href: "#how" },
+          { label: "Get the app", href: "#install", badge: <Badge tone="primary" className="h-5 px-1.5 text-[10px]">PWA</Badge> },
+        ]}
+        cta={
+          <>
             <Link
               to="/login"
-              className="hidden rounded-[12px] px-3 py-2 text-[13.5px] font-semibold text-ink-soft transition-colors hover:text-primary sm:inline-flex"
+              className="inline-flex rounded-[12px] px-3 py-2 text-[13.5px] font-semibold text-ink-soft transition-colors hover:text-primary"
             >
               Sign in
             </Link>
-            <Link to="/register" className="btn btn-primary rounded-[16px] px-4 py-2.5">
+            <Link to="/register" className="btn btn-primary rounded-[14px] px-4 py-2">
               Get started
             </Link>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+        mobileCta={
+          <>
+            <Link to="/register" className="btn btn-primary w-full rounded-[14px] py-2.5">
+              Get started
+            </Link>
+            <Link to="/login" className="btn btn-secondary w-full rounded-[14px] py-2.5">
+              Sign in
+            </Link>
+          </>
+        }
+      />
 
       <main id="main">
         {/* -------------------------------------------------------- hero */}
         <section className="mx-auto grid max-w-[1200px] items-center gap-12 px-5 py-12 sm:px-6 lg:grid-cols-[1.04fr_0.96fr] lg:gap-8 lg:py-20">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full bg-sage-light px-3.5 py-1.5 text-[11.5px] font-semibold text-primary dark:bg-primary-soft">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-primary dark:bg-sage" />
-              Offline-first personal finance
-            </span>
 
             <h1 className="mt-5 text-[44px] font-semibold leading-[1.02] tracking-[-0.045em] text-primary sm:text-[58px] lg:text-[72px]">
               Your money, clearly.

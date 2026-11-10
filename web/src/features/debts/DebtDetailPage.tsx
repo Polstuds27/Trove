@@ -19,9 +19,10 @@ import {
   EmptyState,
   IconButton,
   PageHeader,
-  ProgressBar,
+  ProgressRing,
   Stat,
   useToast,
+  DetailSkeleton,
 } from "../../components/ui";
 import { formatMoney, formatPercent, formatRelativeDay } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
@@ -47,6 +48,8 @@ export function DebtDetailPage() {
       )[0] ?? null,
     [debt, dataset.transactions, lookups],
   );
+
+  if (!debt && !ready) return <DetailSkeleton />;
 
   if (!debt) {
     return (
@@ -120,7 +123,15 @@ export function DebtDetailPage() {
       )}
 
       <Card>
-        <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-4">
+          {/* Repayment ring (OpenSource UI ProgressRingCard). */}
+          <ProgressRing
+            value={summary?.percent ?? 0}
+            tone={settled ? "income" : iOwe ? "warning" : "primary"}
+            label={`${debt.counterparty} settlement progress`}
+            caption="settled"
+            size={92}
+          />
           <Stat
             label={iOwe ? "Still to repay" : "Still to collect"}
             emphasis="hero"
@@ -129,7 +140,7 @@ export function DebtDetailPage() {
             caption={`of ${formatMoney(debt.original_amount, debt.currency)}`}
             icon={<Icon className="h-3.5 w-3.5" />}
           />
-          <div className="grid grid-cols-2 gap-x-8">
+          <div className="grid grid-cols-2 gap-x-8 sm:ml-auto">
             <Stat label="Settled" value={formatPercent(summary?.percent ?? 0)} />
             <Stat
               label="Payments"
@@ -138,12 +149,7 @@ export function DebtDetailPage() {
           </div>
         </div>
         <div className="px-4 pb-4">
-          <ProgressBar
-            value={Math.min(100, summary?.percent ?? 0)}
-            tone={settled ? "income" : "primary"}
-            label={`${debt.counterparty} settlement progress`}
-          />
-          <p className="mt-1.5 text-xs text-muted">
+          <p className="text-xs text-muted">
             {settled ? "Settled in full." : `${summary?.payments.length ?? 0} payment(s) recorded so far.`}
           </p>
         </div>

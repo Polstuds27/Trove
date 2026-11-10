@@ -4,6 +4,19 @@ import { useSessionRecovery } from "../../auth/SessionRecovery";
 import { syncVisual, type SyncVisual } from "../../sync/status";
 import { formatRelativeTime } from "../../design/format";
 import { IconButton } from "../ui/Button";
+import { StatusDot } from "../ui/Trove";
+
+/** Dot tone + whether the state is in motion (pings). */
+const DOT: Record<SyncVisual, { tone: "income" | "warning" | "expense" | "muted" | "primary"; pulse: boolean }> = {
+  synced: { tone: "income", pulse: false },
+  syncing: { tone: "primary", pulse: true },
+  offline: { tone: "muted", pulse: false },
+  "api-unavailable": { tone: "warning", pulse: true },
+  pending: { tone: "warning", pulse: true },
+  conflict: { tone: "expense", pulse: false },
+  error: { tone: "expense", pulse: false },
+  "signed-out": { tone: "muted", pulse: false },
+};
 
 const PRESENTATION: Record<SyncVisual, { Icon: LucideIcon; className: string }> = {
   synced: { Icon: CloudSync, className: "text-income" },
@@ -81,7 +94,8 @@ export function SyncIndicator({ compact = false }: { compact?: boolean }) {
         <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
       </IconButton>
       {!compact && (
-        <span className="hidden text-xs text-muted lg:inline" title={detail}>
+        <span className="hidden items-center gap-1.5 text-xs text-muted lg:inline-flex" title={detail}>
+          <StatusDot tone={DOT[visual].tone} pulse={DOT[visual].pulse} />
           <span className={`font-medium ${className}`}>{label}</span>
         </span>
       )}
@@ -125,7 +139,10 @@ export function SyncStatusPanel() {
         <Icon className={`h-5 w-5 ${visual === "syncing" ? "animate-spin-slow" : ""}`} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">{label}</p>
+        <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <StatusDot tone={DOT[visual].tone} pulse={DOT[visual].pulse} />
+          {label}
+        </p>
         <p className="mt-0.5 text-sm leading-relaxed text-muted">{detail}</p>
       </div>
       <IconButton label={visual === "signed-out" ? "Sign in to resume syncing" : "Sync now"} onClick={() => visual === "signed-out" ? requestRecovery() : void syncNow()} disabled={status === "syncing"}>

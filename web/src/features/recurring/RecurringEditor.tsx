@@ -17,13 +17,14 @@ import {
   Button,
   ConfirmOverlay,
   Field,
-  Input,
   Overlay,
   SegmentedControl,
   Select,
   Textarea,
   useToast,
+  DatePicker,
 } from "../../components/ui";
+import { usePreferences } from "../settings/preferences";
 import { useLocalData } from "../analytics/useLocalData";
 
 type Kind = LocalRecurring["type"];
@@ -37,6 +38,7 @@ const FREQUENCIES: { id: Frequency; label: string }[] = [
 ];
 
 export function RecurringEditor() {
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
   const toast = useToast();
   const { recurringId: rawRecurringId } = useParams<{ recurringId: string }>();
@@ -279,18 +281,20 @@ export function RecurringEditor() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input
+            <DatePicker
               label="Next run"
-              type="date"
               value={nextRun}
-              onChange={(event) => setNextRun(event.target.value)}
+              onChange={setNextRun}
               required
+              weekStartsOn={preferences.weekStartsOn}
             />
-            <Input
+            <DatePicker
               label="Ends"
-              type="date"
               value={endAt}
-              onChange={(event) => setEndAt(event.target.value)}
+              onChange={setEndAt}
+              min={nextRun || undefined}
+              placeholder="No end date"
+              weekStartsOn={preferences.weekStartsOn}
               hint="Optional — leave empty to run indefinitely."
             />
           </div>

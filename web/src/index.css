@@ -73,6 +73,7 @@
     --shadow-overlay: 0 24px 60px rgb(27 42 34 / 0.22);
     --shadow-soft: 0 18px 44px rgb(41 71 55 / 0.11);
     --ring-focus: 89 105 79;
+    --shimmer: 255 255 255 / 0.55;
 
     /* Motion ------------------------------------------------------------ *
      * One motion scale for the whole app. Components use the Tailwind
@@ -160,6 +161,7 @@
     --shadow-overlay: 0 28px 60px rgb(0 0 0 / 0.68);
     --shadow-soft: 0 20px 50px rgb(0 0 0 / 0.3);
     --ring-focus: 155 181 135;
+    --shimmer: 255 255 255 / 0.05;
 
     --glass-bg: 20 24 21 / 0.8;
     --glass-border: 255 255 255 / 0.08;
@@ -185,17 +187,41 @@
 
   body {
     background-color: rgb(var(--color-canvas));
-    background-image: var(--page-gradient);
-    background-attachment: fixed;
     color: rgb(var(--color-ink));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv02", "cv03", "cv04";
   }
 
+  /* The page gradient lives on its own fixed, composited layer. Painting it
+     with `background-attachment: fixed` on <body> forced a full-screen
+     repaint on every scroll frame (the main source of scroll jank on phones). */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--page-gradient);
+    will-change: transform;
+  }
+
   .tabular,
   [data-numeric="true"] {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Search fields keep type="search" (mobile "Search" key) but drop the
+     browser's own clear button: every Trove search draws its own ✕. */
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
+
+  input[type="search"]::-ms-clear {
+    display: none;
   }
 
   ::selection {
@@ -256,6 +282,131 @@
       transition-delay: 0ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+@keyframes spinner-spoke {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.18;
+  }
+}
+
+.trove-spinner-spoke {
+  animation: spinner-spoke 1s linear infinite;
+}
+
+/* Heatmap cell pop-in (EasyUI ActivityHeatmap, as CSS). */
+@keyframes heat-cell {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.heat-cell {
+  animation: heat-cell 0.5s var(--ease-out-soft) backwards;
+}
+
+/* Progress ring draws in from empty on mount. */
+@keyframes ring-progress {
+  from {
+    stroke-dashoffset: var(--ring-from);
+  }
+}
+
+.ring-progress {
+  animation: ring-progress var(--motion-reveal) var(--ease-out-soft) backwards;
+}
+
+/* Capped list stagger, after Amicro's `use-stagger` (MIT): only the first
+   eight rows rise in, 28ms apart; longer lists render instantly so scrolling
+   and filtering never wait on animation. */
+/* Off-screen day groups skip layout and paint until scrolled near, so long
+   ledgers scroll and re-open smoothly. The intrinsic size keeps the
+   scrollbar stable. */
+.lazy-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
+}
+
+.stagger-list > :nth-child(-n + 8) {
+  animation: rise var(--motion-base) var(--ease-out-soft) backwards;
+}
+.stagger-list > :nth-child(2) { animation-delay: 28ms; }
+.stagger-list > :nth-child(3) { animation-delay: 56ms; }
+.stagger-list > :nth-child(4) { animation-delay: 84ms; }
+.stagger-list > :nth-child(5) { animation-delay: 112ms; }
+.stagger-list > :nth-child(6) { animation-delay: 140ms; }
+.stagger-list > :nth-child(7) { animation-delay: 168ms; }
+.stagger-list > :nth-child(8) { animation-delay: 196ms; }
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* KpiCard (EasyUI StatCard, as CSS): line draws in, latest point pulses. */
+@keyframes kpi-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.kpi-line {
+  stroke-dasharray: 1;
+  animation: kpi-draw 1.1s var(--ease-out-soft) 150ms backwards;
+}
+
+@keyframes kpi-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+.kpi-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kpi-pulse 1.8s ease-out infinite;
+}
+
+/* FileDrop: indeterminate "working" sweep (no invented percentages). */
+@keyframes file-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.file-sweep {
+  animation: file-sweep 1.1s var(--ease-in-out-soft) infinite;
+}
+
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(150%);
   }
 }
 
@@ -488,7 +639,19 @@
   /* Gentle press feedback — transform only, and skipped while busy/disabled. */
   .btn:active:not(:disabled),
   .trove-btn:active:not(:disabled) {
-    transform: scale(0.985);
+    transform: scale(0.97);
+    transition-duration: 60ms;
+  }
+
+  /* One focus treatment for every button: a soft ring that follows the
+     radius, instead of the generic rectangular outline. */
+  .btn:focus-visible,
+  .trove-btn:focus-visible,
+  .icon-btn:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgb(var(--color-canvas)),
+      0 0 0 4px rgb(var(--ring-focus) / 0.85);
   }
 
   .btn:disabled,
@@ -514,6 +677,14 @@
   .btn-primary:hover:not(:disabled),
   .trove-btn-primary:hover:not(:disabled) {
     background-color: rgb(var(--color-primary-hover));
+  }
+
+  @media (hover: hover) {
+    .btn-primary:hover:not(:disabled):not(:active),
+    .trove-btn-primary:hover:not(:disabled):not(:active) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgb(41 71 55 / 0.24);
+    }
   }
 
   .btn-secondary,
@@ -581,51 +752,7 @@
     @apply h-11 w-11;
   }
 
-  /* ------------------------------------------------------------------ badges */
-  .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none;
-  }
-
-  .badge-neutral {
-    @apply badge;
-    background-color: rgb(var(--color-surface-sunken));
-    color: rgb(var(--color-muted));
-  }
-
-  .badge-primary {
-    @apply badge;
-    background-color: rgb(var(--color-primary-soft-bg));
-    color: rgb(var(--color-primary));
-  }
-
-  .badge-synced,
-  .badge-paid {
-    @apply badge;
-    background-color: rgb(var(--color-income-soft));
-    color: rgb(var(--color-income));
-  }
-
-  .badge-pending,
-  .badge-next {
-    @apply badge;
-    background-color: rgb(var(--color-peach));
-    color: rgb(var(--color-terracotta));
-  }
-
-  .badge-failed,
-  .badge-conflict,
-  .badge-expense {
-    @apply badge;
-    background-color: rgb(var(--color-expense-soft));
-    color: rgb(var(--color-expense));
-  }
-
-  .badge-idle,
-  .badge-upcoming {
-    @apply badge;
-    background-color: rgb(var(--color-surface-sunken));
-    color: rgb(var(--color-muted));
-  }
+  /* Badges: see components/ui/Badge.tsx (EasyUI Badge port). */
 
   /* ------------------------------------------------------------------- pills */
   .trove-pill {
@@ -714,9 +841,49 @@
   }
 
   /* --------------------------------------------------------------- skeletons */
+  /* Shimmer sweep adapted from Amicro's `skeleton` (MIT, Syed Subhan Uddin):
+     the Framer Motion x-translation is re-expressed as a CSS keyframe on a
+     pseudo-element, so no animation library ships. Reduced motion stops it. */
   .skeleton {
-    @apply animate-pulse rounded-lg;
+    @apply relative overflow-hidden rounded-lg;
     background-color: rgb(var(--color-surface-sunken));
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 80%;
+    background: linear-gradient(90deg, transparent 0%, rgb(var(--shimmer)) 50%, transparent 100%);
+    transform: translateX(-150%);
+    animation: skeleton-sweep 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton::after {
+      display: none;
+    }
+  }
+
+  /* Pressable surfaces (cards that are links): a calm lift on hover, a small
+     settle on press. Transform + shadow only, so layout never moves. */
+  .pressable {
+    transition:
+      transform var(--motion-base) var(--ease-out-soft),
+      box-shadow var(--motion-base) var(--ease-out-soft),
+      border-color var(--motion-fast) var(--ease-out-soft);
+  }
+
+  @media (hover: hover) {
+    .pressable:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-raised);
+    }
+  }
+
+  .pressable:active {
+    transform: translateY(0) scale(0.99);
+    transition-duration: 60ms;
   }
 
   /* ------------------------------------------------------------ scroll areas */

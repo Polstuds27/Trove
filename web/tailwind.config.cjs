@@ -192,6 +192,30 @@ module.exports = {
         "spin-slow": {
           to: { transform: "rotate(360deg)" },
         },
+        // DatePicker (EasyUI Calendar): month slides in the direction of travel.
+        "cal-next": {
+          from: { opacity: "0", transform: "translateX(24px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "cal-prev": {
+          from: { opacity: "0", transform: "translateX(-24px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        // Select (EasyUI SpringSelect): menu slides down with a slight overshoot.
+        "select-in": {
+          "0%": { opacity: "0", transform: "translateY(-6px) scale(0.98)" },
+          "70%": { opacity: "1", transform: "translateY(1px) scale(1.005)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        // Badge (EasyUI Badge): a changed value rolls up into place.
+        "badge-roll": {
+          from: { opacity: "0", transform: "translateY(70%)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "cal-pill": {
+          from: { opacity: "0", transform: "scale(0.6)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
         "pulse-dot": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.35" },
@@ -217,6 +241,11 @@ module.exports = {
         "progress-in": "progress-in var(--motion-reveal) var(--ease-out-soft) backwards",
         "toast-in": "toast-in var(--motion-base) var(--ease-out-soft) backwards",
         "spin-slow": "spin-slow 1.4s linear infinite",
+        "cal-next": "cal-next var(--motion-slow) var(--ease-out-soft) backwards",
+        "cal-prev": "cal-prev var(--motion-slow) var(--ease-out-soft) backwards",
+        "select-in": "select-in var(--motion-slow) var(--ease-out-soft) backwards",
+        "badge-roll": "badge-roll var(--motion-base) cubic-bezier(0.34, 1.4, 0.64, 1) backwards",
+        "cal-pill": "cal-pill var(--motion-base) var(--ease-out-soft) backwards",
         "pulse-dot": "pulse-dot 1.6s ease-in-out infinite",
       },
     },

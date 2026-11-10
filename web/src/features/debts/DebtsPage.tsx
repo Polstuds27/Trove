@@ -17,6 +17,7 @@ import {
   LinkButton,
   PageHeader,
   SurfaceCard,
+  DueBadge,
 } from "../../components/ui";
 import { formatDate, formatMoney, formatPercent } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
@@ -280,11 +281,7 @@ function DebtColumn({
                       <span className="truncate text-[14.5px] font-semibold leading-5 text-ink">
                         {debt.counterparty}
                       </span>
-                      {item.overdue && (
-                        <span className="rounded-full bg-expense-soft px-1.5 py-0.5 text-[10px] font-semibold text-expense">
-                          Overdue
-                        </span>
-                      )}
+                      {debt.due_date && <DueBadge days={item.daysUntilDue} />}
                     </span>
                     <span
                       className={`mt-0.5 block truncate text-[11.5px] ${

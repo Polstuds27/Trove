@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
@@ -230,15 +230,50 @@ function MobileBottomNav({
   onMore: () => void;
   moreOpen: boolean;
 }) {
-  const activeKey = mobileActiveKey(pathname);
+  const activeKey = moreOpen ? "more" : mobileActiveKey(pathname);
+  const activeIndex = Math.max(0, MOBILE_ITEMS.findIndex((item) => item.key === activeKey));
+
+  /*
+   * One shared pill slides between tabs and morphs on the way: the edge
+   * heading toward the new tab moves fast, the trailing edge follows slower,
+   * so the pill stretches across the gap and then contracts into place
+   * (a liquid "gooey" tab, done with two CSS transitions, no JS animation).
+   * Reduced motion collapses it to an instant move via the global rule.
+   */
+  // Direction of the last real tab change; kept across unrelated re-renders
+  // so a mid-slide render doesn't reset the stretch.
+  const [motion, setMotion] = useState({ index: activeIndex, direction: 0 });
+  if (motion.index !== activeIndex) {
+    setMotion({ index: activeIndex, direction: activeIndex > motion.index ? 1 : -1 });
+  }
+  const direction = motion.direction;
+  const lead = "220ms cubic-bezier(0.3, 0.9, 0.3, 1)";
+  const trail = "420ms cubic-bezier(0.5, 0, 0.2, 1) 60ms";
+  const pillStyle = {
+    // Positions in fifths of the inner track (container has 8px side padding).
+    left: `calc(8px + (100% - 16px) * ${activeIndex} / 5)`,
+    right: `calc(8px + (100% - 16px) * ${MOBILE_ITEMS.length - 1 - activeIndex} / 5)`,
+    transition:
+      direction === 1
+        ? `right ${lead}, left ${trail}`
+        : direction === -1
+          ? `left ${lead}, right ${trail}`
+          : "left 220ms ease, right 220ms ease",
+  };
+
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-[14px] bottom-[calc(20px+env(safe-area-inset-bottom,0px))] z-40 lg:hidden"
+      className="fixed inset-x-[14px] bottom-[calc(20px+env(safe-area-inset-bottom,0px))] z-40 [will-change:transform] lg:hidden"
     >
-      <div className="glass grid h-[70px] grid-cols-5 items-center rounded-full px-2">
+      <div className="glass relative grid h-[70px] grid-cols-5 items-center rounded-full px-2">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 h-[54px] -translate-y-1/2 rounded-full bg-primary shadow-pill"
+          style={pillStyle}
+        />
         {MOBILE_ITEMS.map((item) => {
-          const active = item.key === activeKey || (item.key === "more" && moreOpen);
+          const active = item.key === activeKey;
           const Icon = item.icon;
           const body = (
             <>
@@ -246,10 +281,9 @@ function MobileBottomNav({
               <span className="text-[11px] font-semibold leading-none">{item.label}</span>
             </>
           );
-          const className = `flex h-[54px] flex-col items-center justify-center gap-1.5 rounded-full transition-[background-color,color,box-shadow,transform] duration-base ease-smooth active:scale-[0.96] ${
-            active
-              ? "bg-primary text-primary-contrast shadow-pill"
-              : "text-muted hover:text-ink"
+          // Label colour flips as the pill arrives (short delay when becoming active).
+          const className = `relative z-10 flex h-[54px] flex-col items-center justify-center gap-1.5 rounded-full transition-[color,transform] ease-smooth active:scale-[0.96] ${
+            active ? "text-primary-contrast delay-100 duration-base" : "text-muted duration-fast hover:text-ink"
           }`;
           if (item.to) {
             return (
@@ -367,14 +401,29 @@ export function RouteTransition({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const firstRender = useRef(true);
+  useLayoutEffect(() => {
+    // Editors open as sheets over the current page: leave it exactly as it is.
     if (editorBackgroundPath(pathname)) return;
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    // A new page starts at the top, instantly (never a smooth scroll that
+    // competes with the entrance animation).
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     const element = ref.current;
-    if (!element) return;
-    element.classList.remove("animate-page-in");
-    // Force a style flush so re-adding the class restarts the keyframes.
-    element.getBoundingClientRect();
-    element.classList.add("animate-page-in");
+    if (!element || typeof element.animate !== "function") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    // Web Animations run on the compositor and need no forced reflow (the old
+    // remove-class / measure / re-add-class trick did one on every navigation).
+    element.animate(
+      [
+        { opacity: 0, transform: "translateY(6px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      { duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
   }, [pathname]);
 
   return (
