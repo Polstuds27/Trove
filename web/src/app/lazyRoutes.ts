@@ -11,11 +11,11 @@ import { lazy, type ComponentType } from "react";
 
 type Loader = () => Promise<Record<string, unknown>>;
 
-const loaders: Loader[] = [];
+const loaders: { load: Loader; name: string }[] = [];
 
 /** `React.lazy` for named exports, registered for idle prefetching. */
 function named<T extends ComponentType<object>>(load: () => Promise<Record<string, unknown>>, name: string) {
-  loaders.push(load);
+  loaders.push({ load, name });
   return lazy(async () => ({ default: (await load())[name] as T }));
 }
 
@@ -91,11 +91,19 @@ export function prefetchRoutes() {
     "requestIdleCallback" in window
       ? (cb) => (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback(cb, { timeout: 4000 })
       : (cb) => window.setTimeout(cb, 1200);
-  const queue = [...loaders];
+  // Warm the most frequently used navigation destinations first.
+  const primary = ["TransactionsPage", "BudgetsPage", "GoalsPage", "AccountsPage", "StatisticsPage"];
+  const queue = [...loaders].sort((a, b) => {
+    const rank = (name: string) => {
+      const index = primary.indexOf(name);
+      return index === -1 ? primary.length : index;
+    };
+    return rank(a.name) - rank(b.name);
+  });
   const next = () => {
-    const load = queue.shift();
-    if (!load) return;
-    load().catch(() => undefined).finally(() => idle(next));
+    const entry = queue.shift();
+    if (!entry) return;
+    entry.load().catch(() => undefined).finally(() => idle(next));
   };
   idle(next);
 }
