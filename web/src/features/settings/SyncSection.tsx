@@ -26,6 +26,17 @@ const STATUS_TONE = {
   error: "expense",
 } as const;
 
+/** Plain-language names for the engine's states (the raw ids are internal). */
+const STATUS_LABEL: Record<string, string> = {
+  idle: "Up to date",
+  syncing: "Syncing",
+  offline: "Offline",
+  "api-unavailable": "Server unreachable",
+  "signed-out": "Signed out",
+  error: "Sync failed",
+};
+
+
 export function SyncSection() {
   const { status, pendingCount, conflicts, lastSyncedAt, syncNow } = useSync();
   const reSignIn = useSessionRecovery();
@@ -112,7 +123,9 @@ export function SyncSection() {
         }
       >
         <div className="flex flex-wrap items-center gap-2 pb-1">
-          <Badge tone={STATUS_TONE[status] ?? "neutral"}>{status}</Badge>
+          <Badge tone={STATUS_TONE[status] ?? "neutral"} dot pulse={status === "syncing" || status === "api-unavailable"}>
+            {STATUS_LABEL[status] ?? status}
+          </Badge>
           <span className="text-sm text-muted">
             {status === "signed-out" && held > 0 ? (
               <>

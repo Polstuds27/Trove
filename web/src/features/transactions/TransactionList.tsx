@@ -6,7 +6,7 @@
  * list items, not cards: dense enough to scan on desktop, still tappable on
  * mobile.
  */
-import { Fragment, useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Bookmark, Cloud, CloudOff, Paperclip } from "lucide-react";
 import type { LocalAccount, LocalTransaction } from "../../db/types";
@@ -77,7 +77,7 @@ export function TransactionRow({
   const signed = tx.type === "income" ? "+" : tx.type === "expense" ? "−" : "";
 
   return (
-    <div className={`flex animate-rise items-center gap-3 px-4 py-2.5 ${className}`}>
+    <div className={`flex items-center gap-3 px-4 py-2.5 ${className}`}>
       <span
         aria-hidden="true"
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-ink-soft"
@@ -213,7 +213,7 @@ export function TransactionDayList({
       {groups.map((group) => {
         const totals = dayTotals(group.rows, lookups.fx);
         return (
-          <Fragment key={group.key}>
+          <div key={group.key} className="lazy-render">
             <div className="flex items-baseline justify-between gap-3 border-y border-line bg-surface-sunken px-4 py-1.5">
               <span className="text-xs font-semibold tracking-wide text-ink-soft uppercase">
                 {group.label}
@@ -228,7 +228,7 @@ export function TransactionDayList({
                 )}
               </span>
             </div>
-            <div className="divide-y divide-line">
+            <div className="stagger-list divide-y divide-line">
               {group.rows.map((tx) => (
                 <TransactionRow
                   key={tx.id}
@@ -239,7 +239,7 @@ export function TransactionDayList({
                 />
               ))}
             </div>
-          </Fragment>
+          </div>
         );
       })}
     </div>

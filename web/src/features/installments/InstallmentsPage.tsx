@@ -18,8 +18,9 @@ import {
   ProgressBar,
   StatusBadge,
   SurfaceCard,
+  DueBadge,
 } from "../../components/ui";
-import { formatDate, formatMoney, formatPercent } from "../../design/format";
+import { daysBetween, formatDate, formatMoney, formatPercent } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
 import { installmentProgress, type InstallmentProgress } from "../analytics/engine";
 
@@ -175,6 +176,7 @@ function PlanCard({
                 <CalendarClock aria-hidden="true" className="h-3.5 w-3.5" />
                 Next {formatDate(item.nextDueDate, "short")}
               </span>
+              <DueBadge days={daysBetween(new Date(), item.nextDueDate)} />
             </>
           )}
         </p>

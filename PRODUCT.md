@@ -38,10 +38,10 @@ _(open)_ Decisions not yet confirmed with the user: target market/region, moneti
 
 ## Brand Commitments
 
-- Name: **FinTrack** _(confirmed in repo)_; descriptor "Personal Money Manager — offline-first PWA".
+- Name: **Trove** (frontend and marketing; renamed from FinTrack — package names and `fintrack_*` storage keys intentionally unchanged); descriptor "Personal finance — offline-first PWA".
 - Voice _(inferred from landing copy)_: plain, confident, concrete — feature claims stated as mechanics ("Sync that heals itself", "Budgets that warn early"), no hype.
-- Visual identity: `docs/theme.md` defines the palette (Deep Emerald primary `#0F766E`, Mint accent `#2DD4BF`, Slate neutrals) as a directive for frontend work; treat it as the committed source of truth if/when design work touches these tokens.
-- No logo asset beyond an in-code brand mark (Wallet icon in a rounded square).
+- Visual identity: `docs/theme.md` and `DESIGN.md` define the palette (Forest `#294737`, Sage `#9BA78A`, Cream `#F7F0E5`, Sand `#DFC5AD`, Warm Gray `#D9D3C9`) and Inter typography; tokens live in `web/src/index.css`.
+- Brand mark: lucide `Sprout` in the shell, plus the sprout mascot (`web/public/mascot/`).
 
 ## Evidence on Hand
 

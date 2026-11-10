@@ -19,9 +19,10 @@ import {
   EmptyState,
   IconButton,
   PageHeader,
-  ProgressBar,
+  ProgressRing,
   Stat,
   useToast,
+  DetailSkeleton,
 } from "../../components/ui";
 import { byTxNewest, formatMoney, formatPercent, formatRelativeDay, toDate } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
@@ -55,6 +56,8 @@ export function GoalDetailPage() {
         .sort(byTxNewest),
     [dataset.transactions, goalId],
   );
+
+  if (!goal && !ready) return <DetailSkeleton />;
 
   if (!goal) {
     return (
@@ -121,7 +124,14 @@ export function GoalDetailPage() {
       />
 
       <Card>
-        <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-4">
+          <ProgressRing
+            value={progress?.percent ?? 0}
+            tone={done ? "income" : "primary"}
+            label={`${goal.name} progress`}
+            caption="saved"
+            size={92}
+          />
           <Stat
             label="Saved so far"
             emphasis="hero"
@@ -130,20 +140,13 @@ export function GoalDetailPage() {
             caption={`of ${formatMoney(goal.target_amount, goal.currency)}`}
             icon={done ? <Trophy className="h-3.5 w-3.5" /> : <Target className="h-3.5 w-3.5" />}
           />
-          <div className="grid grid-cols-2 gap-x-8">
+          <div className="grid grid-cols-2 gap-x-8 sm:ml-auto">
             <Stat
               label="To go"
               value={formatMoney(Math.max(0, progress?.remaining ?? goal.target_amount), goal.currency)}
             />
             <Stat label="Progress" value={formatPercent(progress?.percent ?? 0)} />
           </div>
-        </div>
-        <div className="px-4 pb-4">
-          <ProgressBar
-            value={Math.min(100, progress?.percent ?? 0)}
-            tone={done ? "income" : "primary"}
-            label={`${goal.name} progress`}
-          />
         </div>
       </Card>
 

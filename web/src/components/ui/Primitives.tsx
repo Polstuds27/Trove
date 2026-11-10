@@ -93,46 +93,9 @@ export function Stat({
 
 /* ------------------------------------------------------------------------ badges */
 
-export type BadgeTone =
-  | "neutral"
-  | "primary"
-  | "income"
-  | "expense"
-  | "warning"
-  | "info"
-  | "paid"
-  | "next"
-  | "upcoming";
-
-export function Badge({
-  children,
-  tone = "neutral",
-  className = "",
-  icon,
-}: {
-  children: ReactNode;
-  tone?: BadgeTone;
-  className?: string;
-  icon?: ReactNode;
-}) {
-  const cls = {
-    neutral: "badge-neutral",
-    primary: "badge-primary",
-    income: "badge-synced",
-    expense: "badge-expense",
-    warning: "badge-next",
-    info: "badge-primary",
-    paid: "badge-paid",
-    next: "badge-next",
-    upcoming: "badge-upcoming",
-  }[tone];
-  return (
-    <span className={`${cls} ${className}`}>
-      {icon}
-      {children}
-    </span>
-  );
-}
+// Badge lives in Badge.tsx (EasyUI Badge port); re-exported so existing
+// imports keep working.
+export { Badge, type BadgeTone, type BadgeVariant } from "./Badge";
 
 /* ---------------------------------------------------------------------- progress */
 

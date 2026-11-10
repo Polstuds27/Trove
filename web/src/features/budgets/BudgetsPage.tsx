@@ -16,14 +16,18 @@ import {
   Plus,
 } from "lucide-react";
 import {
+  BreakdownBar,
   Button,
   EmptyState,
   GlassPanel,
   LinkButton,
   MascotPanel,
+  MoneyValue,
   PageHeader,
   ProgressBar,
   SegmentedControl,
+  Skeleton,
+  SkeletonText,
   SurfaceCard,
 } from "../../components/ui";
 import { daysBetween, formatMoney, formatMonth, formatPercent } from "../../design/format";
@@ -34,6 +38,15 @@ import { inRange, periodRange, type Period } from "../analytics/period";
 import { convert } from "../analytics/fx";
 
 type View = "all" | "attention";
+
+const BREAKDOWN_COLORS = [
+  "rgb(var(--color-chart-1))",
+  "rgb(var(--color-chart-2))",
+  "rgb(var(--color-chart-3))",
+  "rgb(var(--color-chart-5))",
+  "rgb(var(--color-chart-6))",
+  "rgb(var(--color-chart-4))",
+];
 type Cadence = "month" | "week" | "year";
 
 const CADENCE_PERIOD: Record<Cadence, "monthly" | "weekly" | "yearly"> = {
@@ -189,10 +202,15 @@ export function BudgetsPage() {
 
       {!ready ? (
         <div className="grid gap-[17px] lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-          <div className="trove-card h-[480px] animate-pulse" />
+          <div className="trove-card h-[480px] space-y-4 p-6">
+            <Skeleton className="h-3 w-40" />
+            <Skeleton className="h-10 w-56" />
+            <Skeleton className="h-2.5 w-full rounded-full" />
+            <SkeletonText lines={4} className="pt-6" />
+          </div>
           <div className="space-y-4">
-            <div className="trove-card h-[190px] animate-pulse" />
-            <div className="trove-card h-[120px] animate-pulse" />
+            <div className="trove-card h-[190px] p-6"><Skeleton className="h-full w-full rounded-2xl" /></div>
+            <div className="trove-card h-[120px] p-6"><SkeletonText lines={2} /></div>
           </div>
         </div>
       ) : progress.length === 0 ? (
@@ -222,7 +240,7 @@ export function BudgetsPage() {
                 <p className="text-[12px] text-muted">Spent across {cadenceNoun(cadence)} budgets</p>
                 <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
                   <span className="tabular text-[40px] font-bold leading-none tracking-[-0.035em] text-primary">
-                    {formatMoney(totalSpent, currency)}
+                    <MoneyValue amount={totalSpent} currency={currency} animate />
                   </span>
                   <span className="text-[13px] text-muted">
                     of {formatMoney(totalLimit, currency)}
@@ -271,6 +289,25 @@ export function BudgetsPage() {
                 </button>
               )}
             </div>
+
+            {/* Where the budgeted money went (Watermelon BudgetCard breakdown). */}
+            {byCadence.length > 1 && totalSpent > 0 && (
+              <div className="mt-5 rounded-2xl bg-surface-sunken/45 px-4 py-3.5">
+                <p className="mb-2.5 text-[12px] font-medium text-muted">Spending breakdown</p>
+                <BreakdownBar
+                  label={`${cadenceLabel(cadence)} spending by budget`}
+                  items={[...byCadence]
+                    .sort((a, b) => b.spent - a.spent)
+                    .map((item, index) => ({
+                      id: item.budget.id,
+                      label: item.categoryName ?? "All spending",
+                      value: item.spent,
+                      color: BREAKDOWN_COLORS[index % BREAKDOWN_COLORS.length],
+                    }))}
+                  format={(value) => formatMoney(value, currency, { compact: true })}
+                />
+              </div>
+            )}
 
             {visible.length === 0 ? (
               <EmptyState

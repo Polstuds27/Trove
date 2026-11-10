@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { CircleCheck, Trash2, X } from "lucide-react";
 import { usePresence } from "../../lib/usePresence";
 import { IconButton } from "./Button";
 import { acquireDialog, isTopDialog } from "./dialogLayer";
@@ -239,7 +239,17 @@ export function ConfirmOverlay({
         </>
       }
     >
-      <p className="text-sm text-ink-soft">{message}</p>
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className={`flex h-10 w-10 shrink-0 animate-panel-in items-center justify-center rounded-full ${
+            tone === "danger" ? "bg-expense-soft text-expense" : "bg-primary-soft-bg text-primary"
+          }`}
+        >
+          {tone === "danger" ? <Trash2 className="h-[18px] w-[18px]" /> : <CircleCheck className="h-[18px] w-[18px]" />}
+        </span>
+        <p className="pt-2 text-sm leading-6 text-ink-soft">{message}</p>
+      </div>
     </Overlay>
   );
 }

@@ -29,6 +29,7 @@ import {
   IconButton,
   PageHeader,
   useToast,
+  DetailSkeleton,
 } from "../../components/ui";
 import type { LocalRecurring } from "../../db/types";
 import { byTxNewest, formatDate, formatMoney, formatRelativeDay, toDate } from "../../design/format";
@@ -76,6 +77,8 @@ export function RecurringDetailPage() {
         .slice(0, 10),
     [dataset.transactions, recurringId],
   );
+
+  if (!rule && !ready) return <DetailSkeleton />;
 
   if (!rule) {
     return (

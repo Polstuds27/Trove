@@ -5,7 +5,7 @@
  * inside the app shell, and `/` never renders anything — it forwards straight to
  * `/overview` so the first screen is always a real one.
  */
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useSearchParams, type Location } from "react-router-dom";
 import { useModalBackground } from "./app/modalRoutes";
 
@@ -13,68 +13,65 @@ import { useAuth } from "./auth/AuthContext";
 import { isAuthRoute } from "./app/navigation";
 import { AppShell, RouteTransition } from "./components/layout/AppShell";
 import { AppLockGate } from "./components/layout/AppLockGate";
-import { ErrorBoundary } from "./components/ui";
+import { ErrorBoundary, PageLoader } from "./components/ui";
 import { QuickAddSheet } from "./features/transactions/QuickAddSheet";
 
-/* Public ------------------------------------------------------------------ */
+/* Eager: the first screen a visitor or a signed-in user sees. */
 import { LoginPage } from "./features/auth/LoginPage";
 import { LandingPage } from "./features/landing/LandingPage";
-import { RegisterPage } from "./features/auth/RegisterPage";
-import { ForgotPasswordPage } from "./features/auth/ForgotPasswordPage";
-import { ResetPasswordPage } from "./features/auth/ResetPasswordPage";
-import { VerifyEmailPage } from "./features/auth/VerifyEmailPage";
-import { MfaPage } from "./features/auth/MfaPage";
-
-/* Primary ----------------------------------------------------------------- */
 import { OverviewPage } from "./features/overview/OverviewPage";
-import { AccountsPage } from "./features/accounts/AccountsPage";
-import { AccountDetailPage } from "./features/accounts/AccountDetailPage";
-import { AccountEditor } from "./features/accounts/AccountEditor";
-import { TransactionsPage } from "./features/transactions/TransactionsPage";
-import { TransactionDetailPage } from "./features/transactions/TransactionDetailPage";
-import { TransactionEditor } from "./features/transactions/TransactionEditor";
-import { CategoriesPage } from "./features/categories/CategoriesPage";
-import { CategoryEditor } from "./features/categories/CategoryEditor";
-import { BudgetsPage } from "./features/budgets/BudgetsPage";
-import { BudgetDetailPage } from "./features/budgets/BudgetDetailPage";
-import { BudgetEditor } from "./features/budgets/BudgetEditor";
-import { StatisticsPage } from "./features/statistics/StatisticsPage";
-import { CalendarPage } from "./features/calendar/CalendarPage";
 
-/* Planning ---------------------------------------------------------------- */
-import { GoalsPage } from "./features/goals/GoalsPage";
-import { GoalDetailPage } from "./features/goals/GoalDetailPage";
-import { GoalEditor } from "./features/goals/GoalEditor";
-import { DebtsPage } from "./features/debts/DebtsPage";
-import { DebtDetailPage } from "./features/debts/DebtDetailPage";
-import { DebtEditor } from "./features/debts/DebtEditor";
-import { CreditCardsPage } from "./features/creditCards/CreditCardsPage";
-import { RecurringPage } from "./features/recurring/RecurringPage";
-import { RecurringDetailPage } from "./features/recurring/RecurringDetailPage";
-import { RecurringEditor } from "./features/recurring/RecurringEditor";
-import { InstallmentsPage } from "./features/installments/InstallmentsPage";
-import { InstallmentDetailPage } from "./features/installments/InstallmentDetailPage";
-import { InstallmentEditor } from "./features/installments/InstallmentEditor";
-
-/* Organise ---------------------------------------------------------------- */
-import { SearchPage } from "./features/search/SearchPage";
-import { BookmarksPage } from "./features/bookmarks/BookmarksPage";
-import { NotificationsPage } from "./features/notifications/NotificationsPage";
-import { ConflictsPage } from "./features/conflicts/ConflictsPage";
-
-/* Settings ---------------------------------------------------------------- */
-import { SettingsPage } from "./features/settings/SettingsPage";
-import { OverviewSection } from "./features/settings/OverviewSection";
-import { ProfileSection } from "./features/settings/ProfileSection";
-import { SecuritySection } from "./features/settings/SecuritySection";
-import { AppearanceSection } from "./features/settings/AppearanceSection";
-import { NotificationsSection } from "./features/settings/NotificationsSection";
-import { CurrencySection } from "./features/settings/CurrencySection";
-import { FinancialSection } from "./features/settings/FinancialSection";
-import { SyncSection } from "./features/settings/SyncSection";
-import { DataSection } from "./features/settings/DataSection";
-import { DevicesSection } from "./features/settings/DevicesSection";
-import { AboutSection } from "./features/settings/AboutSection";
+/* Everything else is split per route (see app/lazyRoutes.ts). */
+import {
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  VerifyEmailPage,
+  MfaPage,
+  AccountsPage,
+  AccountDetailPage,
+  AccountEditor,
+  TransactionsPage,
+  TransactionDetailPage,
+  TransactionEditor,
+  CategoriesPage,
+  CategoryEditor,
+  BudgetsPage,
+  BudgetDetailPage,
+  BudgetEditor,
+  StatisticsPage,
+  CalendarPage,
+  GoalsPage,
+  GoalDetailPage,
+  GoalEditor,
+  DebtsPage,
+  DebtDetailPage,
+  DebtEditor,
+  CreditCardsPage,
+  RecurringPage,
+  RecurringDetailPage,
+  RecurringEditor,
+  InstallmentsPage,
+  InstallmentDetailPage,
+  InstallmentEditor,
+  SearchPage,
+  BookmarksPage,
+  NotificationsPage,
+  ConflictsPage,
+  SettingsPage,
+  OverviewSection,
+  ProfileSection,
+  SecuritySection,
+  AppearanceSection,
+  NotificationsSection,
+  CurrencySection,
+  FinancialSection,
+  SyncSection,
+  DataSection,
+  DevicesSection,
+  AboutSection,
+  prefetchRoutes,
+} from "./app/lazyRoutes";
 
 function PublicRoutes() {
   return (
@@ -196,6 +193,11 @@ export default function App() {
   // `/transactions?add=expense` opens the sheet straight into that type.
   const deepLinkAdd = pathname === "/transactions" && params.get("add") !== null;
 
+  // Signed in: warm every route chunk while idle so the app works offline.
+  useEffect(() => {
+    if (isAuthenticated) prefetchRoutes();
+  }, [isAuthenticated]);
+
   if (onAuthScreen) {
     // Already signed in: there is nothing to do on an auth screen.
     if (isAuthenticated && pathname !== "/reset-password" && !pathname.startsWith("/reset-password/")) {
@@ -203,7 +205,9 @@ export default function App() {
     }
     return (
       <RouteTransition>
-        <PublicRoutes />
+        <Suspense fallback={<PageLoader />}>
+          <PublicRoutes />
+        </Suspense>
       </RouteTransition>
     );
   }
@@ -213,7 +217,9 @@ export default function App() {
     // `PublicRoutes` still forwards every other path to the sign-in screen.
     return (
       <RouteTransition>
-        <PublicRoutes />
+        <Suspense fallback={<PageLoader />}>
+          <PublicRoutes />
+        </Suspense>
       </RouteTransition>
     );
   }
@@ -225,8 +231,11 @@ export default function App() {
           {/* One broken route must not unmount the shell — and, without a
               boundary, React unmounts everything and leaves a white page. */}
           <ErrorBoundary>
-            <MainRoutes location={backgroundLocation} />
-            {editorOpen && <EditorRoutes />}
+            <Suspense fallback={<PageLoader />}>
+              <MainRoutes location={backgroundLocation} />
+            </Suspense>
+            {/* Separate boundary: opening an editor must never blank the page under it. */}
+            <Suspense fallback={null}>{editorOpen && <EditorRoutes />}</Suspense>
           </ErrorBoundary>
         </AppShell>
       </AppLockGate>

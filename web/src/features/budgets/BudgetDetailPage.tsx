@@ -19,9 +19,10 @@ import {
   EmptyState,
   IconButton,
   PageHeader,
-  ProgressBar,
+  DonutChart,
   Stat,
   useToast,
+  DetailSkeleton,
 } from "../../components/ui";
 import { byTxNewest, formatDate, formatMoney, formatPercent, formatRelativeDay } from "../../design/format";
 import { useLocalData } from "../analytics/useLocalData";
@@ -73,6 +74,8 @@ export function BudgetDetailPage() {
       .sort(byTxNewest)
       .slice(0, 25);
   }, [budget, dataset.transactions, preferences.monthStartDay]);
+
+  if (!budget && !ready) return <DetailSkeleton />;
 
   if (!budget) {
     return (
@@ -140,6 +143,20 @@ export function BudgetDetailPage() {
       {progress && (
         <Card>
           <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4">
+            {/* Semi-circle usage gauge (EasyUI DonutChart "semi" variant). */}
+            <DonutChart
+              variant="semi"
+              size={168}
+              thickness={16}
+              showLegend={false}
+              ariaLabel={`${formatPercent(progress.percent)} of the limit used`}
+              slices={[
+                { label: "Spent", value: Math.min(progress.spent, progress.spent + Math.max(0, progress.remaining)), color: tone === "expense" ? "rgb(var(--color-expense))" : tone === "warning" ? "rgb(var(--color-warning))" : "rgb(var(--color-progress))" },
+                { label: "Remaining", value: Math.max(0, progress.remaining), color: "transparent" },
+              ]}
+              centerValue={formatPercent(progress.percent)}
+              centerLabel="used"
+            />
             <Stat
               label="Spent so far"
               emphasis="hero"
@@ -159,13 +176,6 @@ export function BudgetDetailPage() {
                 value={formatPercent(progress.percent)}
               />
             </div>
-          </div>
-          <div className="px-4 pb-4">
-            <ProgressBar
-              value={progress.percent}
-              tone={tone}
-              label={`${category?.name ?? "Total"} budget usage`}
-            />
           </div>
         </Card>
       )}

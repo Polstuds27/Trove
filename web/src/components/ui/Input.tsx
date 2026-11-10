@@ -3,7 +3,6 @@ import {
   useId,
   type InputHTMLAttributes,
   type ReactNode,
-  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 import { Search, X } from "lucide-react";
@@ -83,39 +82,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   );
 });
 
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: ReactNode;
-  hint?: ReactNode;
-  error?: string | null;
-  addon?: ReactNode;
-  fieldClassName?: string;
-}
-
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, hint, error, addon, fieldClassName = "", className = "", id, children, required, ...rest },
-  ref,
-) {
-  const generatedId = useId();
-  const selectId = id ?? generatedId;
-  return (
-    <Field label={label} hint={hint} error={error} addon={addon} htmlFor={selectId} required={required} className={fieldClassName}>
-      <select
-        ref={ref}
-        id={selectId}
-        required={required}
-        aria-invalid={error ? true : undefined}
-        className={`input cursor-pointer appearance-none bg-[length:16px] bg-[right_0.6rem_center] bg-no-repeat pr-8 ${error ? "input-error" : ""} ${className}`}
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
-        }}
-        {...rest}
-      >
-        {children}
-      </select>
-    </Field>
-  );
-});
+// Select lives in Select.tsx (EasyUI SpringSelect port); re-exported here so
+// existing `./Input` imports keep working.
+export { Select, type SelectProps } from "./Select";
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: ReactNode;

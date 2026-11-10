@@ -5,6 +5,7 @@
  * own toggle markup (and therefore its own focus/keyboard behaviour).
  */
 import type { ReactNode } from "react";
+import { Toggle } from "../../components/ui/Toggle";
 
 export function Panel({
   title,
@@ -56,25 +57,8 @@ export function ToggleRow({
         </label>
         {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
       </div>
-      <button
-        type="button"
-        id={id}
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-          checked ? "bg-primary dark:bg-sage" : "bg-line-strong"
-        }`}
-      >
-        <span
-          aria-hidden="true"
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform duration-base ease-smooth dark:bg-cream ${
-            checked ? "translate-x-5" : ""
-          }`}
-        />
-      </button>
+      {/* Shared liquid toggle (EasyUI LiquidToggle port). */}
+      <Toggle id={id} checked={checked} onChange={onChange} label={label} disabled={disabled} className="mt-0.5" />
     </div>
   );
 }

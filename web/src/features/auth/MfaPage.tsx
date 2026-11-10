@@ -13,6 +13,7 @@ import { ApiError, apiFetch } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { OtpInput } from "../../components/ui/OtpInput";
 import { AuthLayout, FormError } from "./AuthLayout";
 import { CacheClaimRecovery } from "./CacheClaimRecovery";
 import { isRecoveryCode, normalizeRecoveryCode } from "./recovery";
@@ -205,19 +206,7 @@ export function MfaPage() {
         {error && <FormError message={error} />}
         <CacheClaimRecovery error={error} />
         {mode === "totp" && (
-          <Input
-            label="Two-factor code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            required
-            value={otp}
-            onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-            leadingIcon={<ShieldCheck aria-hidden="true" className="h-4 w-4" />}
-            placeholder="123456"
-            fieldClassName="[&_input]:tracking-[0.4em]"
-            autoFocus
-          />
+          <OtpInput label="Two-factor code" length={6} value={otp} onChange={setOtp} invalid={Boolean(error)} autoFocus />
         )}
         {mode === "recovery" && (
           <Input
@@ -237,19 +226,7 @@ export function MfaPage() {
         )}
         {mode === "email" &&
           (emailSent ? (
-            <Input
-              label="Emailed code"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={8}
-              required
-              value={otp}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-              leadingIcon={<ShieldCheck aria-hidden="true" className="h-4 w-4" />}
-              placeholder="12345678"
-              fieldClassName="[&_input]:tracking-[0.4em]"
-              autoFocus
-            />
+            <OtpInput label="Emailed code" length={8} value={otp} onChange={setOtp} invalid={Boolean(error)} autoFocus />
           ) : (
             <Button
               type="button"

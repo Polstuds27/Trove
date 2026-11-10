@@ -8,6 +8,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowLeftRight,
   Archive,
   ChevronLeft,
   Pencil,
@@ -23,12 +24,13 @@ import {
   CardHeader,
   ConfirmOverlay,
   DetailRow,
-  Divider,
   EmptyState,
   PageHeader,
   ProgressBar,
   Stat,
   useToast,
+  WalletCard,
+  walletThemeFor,
 } from "../../components/ui";
 import { byTxNewest, formatMoney, formatPercent } from "../../design/format";
 import { ACCOUNT_TYPE_LABELS } from "../../design/icons";
@@ -180,16 +182,23 @@ export function AccountDetailPage() {
         }
       />
 
-      <Card>
-        <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4">
-          <Stat
-            label={isLiability(account.type) ? "Amount owed" : "Current balance"}
-            emphasis="hero"
-            tone={isLiability(account.type) ? "expense" : "default"}
-            value={formatMoney(account.current_balance, account.currency)}
-            caption={`Opening ${formatMoney(account.opening_balance, account.currency)}`}
-          />
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+      {/* Balance hero (EasyUI WalletCard) beside this month's movement. */}
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:items-stretch">
+        <WalletCard
+          title={account.name}
+          subtitle={`${account.bank_name ? `${account.bank_name} · ` : ""}${ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · ${account.currency}`}
+          balance={formatMoney(account.current_balance, account.currency)}
+          balanceLabel={isLiability(account.type) ? "Amount owed" : "Current balance"}
+          footer={`Opening ${formatMoney(account.opening_balance, account.currency)}`}
+          theme={walletThemeFor(account.type)}
+          action={{
+            label: "Transfer",
+            icon: <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />,
+            onClick: () => navigate("/transactions?add=transfer"),
+          }}
+        />
+        <Card className="flex flex-col justify-between">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 px-5 pt-5">
             <Stat
               label="In this month"
               tone="income"
@@ -201,11 +210,28 @@ export function AccountDetailPage() {
               value={formatMoney(month.expense, lookups.dataset.baseCurrency)}
             />
           </div>
-        </div>
+          <div className="px-5 pb-5 pt-4">
+            {month.income + month.expense > 0 ? (
+              <>
+                {/* Share of this month's movement that came in vs. went out. */}
+                <div className="flex h-2 gap-1" aria-hidden="true">
+                  {month.income > 0 && <div className="h-full origin-left animate-progress-in rounded-full bg-income" style={{ flex: month.income }} />}
+                  {month.expense > 0 && <div className="h-full origin-left animate-progress-in rounded-full bg-expense [animation-delay:80ms]" style={{ flex: month.expense }} />}
+                </div>
+                <p className="tabular mt-2 text-[12px] text-muted">
+                  Net {formatMoney(month.income - month.expense, lookups.dataset.baseCurrency, { signed: true })} this month
+                </p>
+              </>
+            ) : (
+              <p className="text-[12px] text-muted">No money in or out of this account yet this month.</p>
+            )}
+            <p className="mt-1 text-[12px] text-faint">{history.length} transactions in total</p>
+          </div>
+        </Card>
+      </div>
 
-        {isCard && account.credit_limit ? (
-          <>
-            <Divider />
+      {isCard && account.credit_limit ? (
+        <Card>
             <div className="px-4 py-3.5">
               <div className="mb-2 flex items-baseline justify-between gap-2">
                 <span className="text-sm font-medium text-ink">Credit used</span>
@@ -235,9 +261,8 @@ export function AccountDetailPage() {
                 </dl>
               )}
             </div>
-          </>
-        ) : null}
-      </Card>
+        </Card>
+      ) : null}
 
       <MascotTipCard
         title="Quick tip"

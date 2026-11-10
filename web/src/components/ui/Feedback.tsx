@@ -257,6 +257,33 @@ export function SkeletonStats({ count = 3 }: { count?: number }) {
   );
 }
 
+/** Placeholder for a detail screen while IndexedDB answers (never a "Loading…" empty state). */
+export function DetailSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true">
+      <LoadingLabel>Loading details</LoadingLabel>
+      <div aria-hidden="true" className="flex items-center gap-3 pt-1">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+      <div aria-hidden="true" className="trove-card flex flex-wrap items-center gap-6 px-5 py-5">
+        <Skeleton className="h-[92px] w-[92px] rounded-full" />
+        <div className="flex-1 space-y-2.5">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-3 w-28" />
+        </div>
+      </div>
+      <div className="trove-card overflow-hidden py-2">
+        <SkeletonRows rows={4} height={60} />
+      </div>
+    </div>
+  );
+}
+
 /** Screen-reader-only live region text for loading states. */
 export function LoadingLabel({ children }: { children: ReactNode }) {
   return (

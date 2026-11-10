@@ -21,7 +21,9 @@ import {
   Overlay,
   Select,
   useToast,
+  DatePicker,
 } from "../../components/ui";
+import { usePreferences } from "../settings/preferences";
 import { useLocalData } from "../analytics/useLocalData";
 
 type Period = LocalBudget["period"];
@@ -33,6 +35,7 @@ const PERIODS: { id: Period; label: string }[] = [
 ];
 
 export function BudgetEditor() {
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
   const toast = useToast();
   const { budgetId: rawBudgetId } = useParams<{ budgetId: string }>();
@@ -215,11 +218,11 @@ export function BudgetEditor() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input
+            <DatePicker
               label="Starts"
-              type="date"
               value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
+              onChange={setStartDate}
+              weekStartsOn={preferences.weekStartsOn}
               hint="Weekly and yearly budgets run from this date."
             />
             <Input

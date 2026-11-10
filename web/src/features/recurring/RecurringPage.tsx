@@ -20,9 +20,10 @@ import {
   PageHeader,
   Pill,
   SurfaceCard,
+  DueBadge,
 } from "../../components/ui";
 import type { LocalRecurring } from "../../db/types";
-import { formatDate, formatMoney } from "../../design/format";
+import { daysBetween, formatDate, formatMoney } from "../../design/format";
 import { categoryIcon } from "../../design/icons";
 import { useLocalData } from "../analytics/useLocalData";
 import { updateRecurring } from "../../db/repositories";
@@ -285,7 +286,7 @@ function RecurringRow({
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-[14.5px] font-semibold leading-5 text-ink">{name}</span>
-          {!rule.enabled && <Badge tone="neutral">Paused</Badge>}
+          {!rule.enabled ? <Badge tone="neutral">Paused</Badge> : <DueBadge days={daysBetween(new Date(), rule.next_run_at)} />}
         </span>
         <span className="tabular mt-0.5 block truncate text-[11.5px] text-muted">{meta}</span>
       </button>

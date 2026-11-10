@@ -26,7 +26,9 @@ import {
   Select,
   Textarea,
   useToast,
+  DatePicker,
 } from "../../components/ui";
+import { usePreferences } from "../settings/preferences";
 import { useLocalData } from "../analytics/useLocalData";
 
 type Frequency = LocalInstallment["frequency"];
@@ -38,6 +40,7 @@ const FREQUENCIES: { id: Frequency; label: string }[] = [
 ];
 
 export function InstallmentEditor() {
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
   const toast = useToast();
   const { installmentId: rawInstallmentId } = useParams<{ installmentId: string }>();
@@ -251,12 +254,12 @@ export function InstallmentEditor() {
           </Select>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input
+            <DatePicker
               label="First payment"
-              type="date"
               value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
+              onChange={setStartDate}
               required
+              weekStartsOn={preferences.weekStartsOn}
             />
             <Select label="Frequency" value={frequency} onChange={(event) => setFrequency(event.target.value as Frequency)}>
               {FREQUENCIES.map((option) => (

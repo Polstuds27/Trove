@@ -5,13 +5,13 @@
  * rows cached here); the JSON snapshot and the reset operate purely on the
  * local IndexedDB copy.
  */
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Database, Download, FileDown, Trash2, Upload } from "lucide-react";
 import { ApiError, apiFetch, API_BASE_URL, getAccessToken, refreshAccessToken } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useSync } from "../../sync/SyncContext";
-import { Alert, Button, Card, ConfirmOverlay, useToast } from "../../components/ui";
+import { Alert, Button, Card, ConfirmOverlay, FileDrop, useToast } from "../../components/ui";
 import { formatBytes } from "../../design/format";
 import { db, clearAllData } from "../../db";
 import { importSnapshot, previewSnapshotImport, type SnapshotPreview } from "../../db/snapshot";
@@ -29,7 +29,8 @@ interface ImportResult {
 export function DataSection() {
   const toast = useToast();
   const navigate = useNavigate();
-  const fileRef = useRef<HTMLInputElement>(null);
+  // Bumped to clear the file card after a commit or cancel.
+  const [csvReset, setCsvReset] = useState(0);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export function DataSection() {
   const [snapshotFile, setSnapshotFile] = useState<Record<string, unknown> | null>(null);
   const [snapshotName, setSnapshotName] = useState("");
   const [snapshotPreview, setSnapshotPreview] = useState<SnapshotPreview | null>(null);
-  const snapshotRef = useRef<HTMLInputElement>(null);
+  const [snapshotReset, setSnapshotReset] = useState(0);
   const { isAuthenticated } = useAuth();
   const { syncNow } = useSync();
 
@@ -113,7 +114,8 @@ export function DataSection() {
     }
   }
 
-  async function readFile(file: File) {
+  /** Dry-run a CSV. Resolves null when the preview is ready, or the error shown. */
+  async function readFile(file: File): Promise<string | null> {
     const text = await file.text();
     setPendingCsv(text);
     setPreview(null);
@@ -125,9 +127,12 @@ export function DataSection() {
         body: JSON.stringify({ csv: text, dry_run: true }),
       });
       setPreview(result);
+      return null;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't read that file.");
+      const message = err instanceof ApiError ? err.message : "Couldn't read that file.";
+      setError(message);
       setPendingCsv(null);
+      return message;
     } finally {
       setBusy(null);
     }
@@ -149,7 +154,7 @@ export function DataSection() {
       });
       setPendingCsv(null);
       setPreview(null);
-      if (fileRef.current) fileRef.current.value = "";
+      setCsvReset((n) => n + 1);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Import failed.");
     } finally {
@@ -157,7 +162,8 @@ export function DataSection() {
     }
   }
 
-  async function readSnapshot(file: File) {
+  /** Parse and preview a snapshot. Resolves null when ready, or the error shown. */
+  async function readSnapshot(file: File): Promise<string | null> {
     setBusy("snapshot-read");
     setError(null);
     setSnapshotPreview(null);
@@ -170,10 +176,13 @@ export function DataSection() {
       setSnapshotFile(snapshot);
       setSnapshotName(file.name);
       setSnapshotPreview(await previewSnapshotImport(snapshot));
+      return null;
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Couldn't read that file.";
       setSnapshotFile(null);
       setSnapshotName("");
-      setError(err instanceof Error ? err.message : "Couldn't read that file.");
+      setError(message);
+      return message;
     } finally {
       setBusy(null);
     }
@@ -192,7 +201,7 @@ export function DataSection() {
       setSnapshotFile(null);
       setSnapshotPreview(null);
       setSnapshotName("");
-      if (snapshotRef.current) snapshotRef.current.value = "";
+      setSnapshotReset((n) => n + 1);
       toast.push({
         tone: "success",
         title: "Snapshot restored",
@@ -277,7 +286,7 @@ export function DataSection() {
         footer={
           preview ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => { setPreview(null); setPendingCsv(null); }}>
+              <Button variant="ghost" size="sm" onClick={() => { setPreview(null); setPendingCsv(null); setCsvReset((n) => n + 1); }}>
                 Cancel
               </Button>
               <Button variant="primary" size="sm" loading={busy === "import"} onClick={() => void commitImport()}>
@@ -287,15 +296,17 @@ export function DataSection() {
           ) : undefined
         }
       >
-        <input
-          ref={fileRef}
-          type="file"
+        {/* Drop zone + file card (EasyUI AnimatedFileUpload → FileDrop). */}
+        <FileDrop
+          label="CSV file to import"
           accept=".csv,text/csv"
-          aria-label="CSV file to import"
-          className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary-soft-bg file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) void readFile(file);
+          title="Drop a CSV here"
+          hint="CSV files · previewed before anything is saved"
+          resetKey={csvReset}
+          onFile={readFile}
+          onClear={() => {
+            setPreview(null);
+            setPendingCsv(null);
           }}
         />
 
@@ -331,6 +342,7 @@ export function DataSection() {
                   setSnapshotFile(null);
                   setSnapshotPreview(null);
                   setSnapshotName("");
+                  setSnapshotReset((n) => n + 1);
                 }}
               >
                 Cancel
@@ -348,15 +360,17 @@ export function DataSection() {
           ) : undefined
         }
       >
-        <input
-          ref={snapshotRef}
-          type="file"
+        <FileDrop
+          label="Snapshot file to restore"
           accept=".json,application/json"
-          aria-label="Snapshot file to restore"
-          className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary-soft-bg file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) void readSnapshot(file);
+          title="Drop a snapshot here"
+          hint="Trove JSON snapshot · previewed before restoring"
+          resetKey={snapshotReset}
+          onFile={readSnapshot}
+          onClear={() => {
+            setSnapshotFile(null);
+            setSnapshotPreview(null);
+            setSnapshotName("");
           }}
         />
         {!isAuthenticated && (

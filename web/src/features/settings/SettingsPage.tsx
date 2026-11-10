@@ -5,6 +5,7 @@
  * Every sub-route keeps the section rail so changing one setting never loses
  * the way back, while the index shows the summary cards directly.
  */
+import { Suspense } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Bell,
@@ -19,7 +20,7 @@ import {
   Smartphone,
   UserRound,
 } from "lucide-react";
-import { PageHeader } from "../../components/ui";
+import { PageHeader, SkeletonRows } from "../../components/ui";
 
 interface Section {
   to: string;
@@ -49,7 +50,7 @@ export function SettingsPage() {
   const current = SECTIONS.find((section) => section.to === pathname) ?? SECTIONS[0];
 
   if (isOverview) {
-    return <Outlet />;
+    return <Suspense fallback={<SkeletonRows rows={4} />}><Outlet /></Suspense>;
   }
 
   return (
@@ -81,7 +82,7 @@ export function SettingsPage() {
         </nav>
 
         <div className="min-w-0">
-          <Outlet />
+          <Suspense fallback={<SkeletonRows rows={4} />}><Outlet /></Suspense>
         </div>
       </div>
     </div>
