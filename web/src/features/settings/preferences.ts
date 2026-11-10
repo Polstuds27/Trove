@@ -87,8 +87,6 @@ export function resolveTheme(theme: ThemeMode): "light" | "dark" {
   return theme;
 }
 
-let themeSwitchTimer: ReturnType<typeof setTimeout> | undefined;
-
 function applyTheme(theme: ThemeMode): void {
   if (typeof document === "undefined") return;
   const resolved = resolveTheme(theme);
@@ -101,14 +99,11 @@ function applyTheme(theme: ThemeMode): void {
   }
   // Light <-> dark: cross-fade so the switch isn't a hard flash.
   const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
-  if (typeof doc.startViewTransition === "function") {
+  if (typeof doc.startViewTransition === "function" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     doc.startViewTransition(() => setThemeAttributes(resolved));
     return;
   }
-  root.classList.add("theme-switching");
   setThemeAttributes(resolved);
-  clearTimeout(themeSwitchTimer);
-  themeSwitchTimer = setTimeout(() => root.classList.remove("theme-switching"), 500);
 }
 
 function setThemeAttributes(resolved: "light" | "dark"): void {

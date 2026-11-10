@@ -528,6 +528,17 @@
     backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
   }
 
+  /* A fixed blur repaints as pages move beneath it, especially on phones. */
+  .mobile-nav-surface {
+    background-color: rgb(255 253 250 / 0.96);
+    border: 1px solid rgb(var(--glass-border));
+    box-shadow: var(--shadow-raised);
+  }
+
+  [data-theme="dark"] .mobile-nav-surface {
+    background-color: rgb(20 24 21 / 0.97);
+  }
+
   .trove-sidebar {
     background: var(--sidebar-gradient);
     border: 1px solid rgb(255 255 255 / 0.7);
@@ -976,29 +987,9 @@
 }
 }
 
-/* ---------------------------------------------------------------------------
- * Theme switch: soft cross-fade instead of a hard flash.
- * View Transitions where supported; otherwise `.theme-switching` (set briefly
- * by applyTheme) eases every colour property.
- * ------------------------------------------------------------------------- */
+/* Cross-fade theme snapshots without animating every element's colors. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.45s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-html.theme-switching,
-html.theme-switching *,
-html.theme-switching *::before,
-html.theme-switching *::after {
-  transition-property: background-color, color, border-color, outline-color, fill, stroke, box-shadow,
-    text-decoration-color !important;
-  transition-duration: 0.45s !important;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
-  transition-delay: 0s !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 0.2s;
-  }
+  animation-duration: 0.2s;
+  animation-timing-function: ease-out;
 }

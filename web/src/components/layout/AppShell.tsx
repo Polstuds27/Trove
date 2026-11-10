@@ -233,32 +233,30 @@ function MobileBottomNav({
   const activeKey = moreOpen ? "more" : mobileActiveKey(pathname);
   const activeIndex = Math.max(0, MOBILE_ITEMS.findIndex((item) => item.key === activeKey));
 
-  /*
-   * One shared pill slides between tabs and morphs on the way: the edge
-   * heading toward the new tab moves fast, the trailing edge follows slower,
-   * so the pill stretches across the gap and then contracts into place
-   * (a liquid "gooey" tab, done with two CSS transitions, no JS animation).
-   * Reduced motion collapses it to an instant move via the global rule.
-   */
-  // Direction of the last real tab change; kept across unrelated re-renders
-  // so a mid-slide render doesn't reset the stretch.
-  const [motion, setMotion] = useState({ index: activeIndex, direction: 0 });
-  if (motion.index !== activeIndex) {
-    setMotion({ index: activeIndex, direction: activeIndex > motion.index ? 1 : -1 });
-  }
-  const direction = motion.direction;
-  const lead = "220ms cubic-bezier(0.3, 0.9, 0.3, 1)";
-  const trail = "420ms cubic-bezier(0.5, 0, 0.2, 1) 60ms";
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const previousIndex = useRef(activeIndex);
+  useLayoutEffect(() => {
+    const distance = Math.abs(activeIndex - previousIndex.current);
+    previousIndex.current = activeIndex;
+    const pill = pillRef.current;
+    if (!distance || !pill || typeof pill.animate !== "function" ||
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const animation = pill.animate(
+      [
+        { transform: "scaleX(1)" },
+        { transform: `scaleX(${1 + Math.min(distance * 0.18, 0.55)})`, offset: 0.45 },
+        { transform: "scaleX(1)" },
+      ],
+      { duration: 300, easing: "ease-in-out" },
+    );
+    return () => animation.cancel();
+  }, [activeIndex]);
+
+  // Animate the highlight without forcing layout on every frame.
   const pillStyle = {
-    // Positions in fifths of the inner track (container has 8px side padding).
-    left: `calc(8px + (100% - 16px) * ${activeIndex} / 5)`,
-    right: `calc(8px + (100% - 16px) * ${MOBILE_ITEMS.length - 1 - activeIndex} / 5)`,
-    transition:
-      direction === 1
-        ? `right ${lead}, left ${trail}`
-        : direction === -1
-          ? `left ${lead}, right ${trail}`
-          : "left 220ms ease, right 220ms ease",
+    width: `calc((100% - 16px) / ${MOBILE_ITEMS.length})`,
+    transform: `translate(${activeIndex * 100}%, -50%)`,
+    transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
   };
 
   return (
@@ -266,12 +264,14 @@ function MobileBottomNav({
       aria-label="Primary"
       className="fixed inset-x-[14px] bottom-[calc(20px+env(safe-area-inset-bottom,0px))] z-40 [will-change:transform] lg:hidden"
     >
-      <div className="glass relative grid h-[70px] grid-cols-5 items-center rounded-full px-2">
+      <div className="mobile-nav-surface relative grid h-[70px] grid-cols-5 items-center rounded-full px-2">
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 h-[54px] -translate-y-1/2 rounded-full bg-primary shadow-pill"
+          className="pointer-events-none absolute left-2 top-1/2 h-[54px]"
           style={pillStyle}
-        />
+        >
+          <span ref={pillRef} className="block h-full w-full rounded-full bg-primary shadow-pill" />
+        </span>
         {MOBILE_ITEMS.map((item) => {
           const active = item.key === activeKey;
           const Icon = item.icon;
@@ -417,13 +417,14 @@ export function RouteTransition({ children }: { children: ReactNode }) {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     // Web Animations run on the compositor and need no forced reflow (the old
     // remove-class / measure / re-add-class trick did one on every navigation).
-    element.animate(
+    const animation = element.animate(
       [
         { opacity: 0, transform: "translateY(6px)" },
         { opacity: 1, transform: "translateY(0)" },
       ],
-      { duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      { duration: 180, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
     );
+    return () => animation.cancel();
   }, [pathname]);
 
   return (
